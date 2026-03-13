@@ -168,22 +168,33 @@ ACTIONS = [
 
 
 def pick_action(remaining_budget, remaining_time_s, history, strategy="balanced"):
-    """Use LLM to pick the best next action given current state."""
-    history_str = "\n".join(
-        f"  - {h['action']}: delta={h['delta']}, cost=${h['cost']:.3f}, {h['duration_s']:.0f}s"
-        for h in history[-10:]
-    ) or "  (no history yet)"
-
-    actions_str = "\n".join(
-        f"  - {a['id']}: {a['description']} (est. ${a['cost_estimate']:.2f}, ~{a['time_estimate_s']}s)"
-        for a in ACTIONS
+    """Pick the best next action. Uses LLM if available, else round-robin."""
+    available = [
+        a for a in ACTIONS
         if a["cost_estimate"] <= remaining_budget and a["time_estimate_s"] <= remaining_time_s
-    )
-
-    if not actions_str:
+    ]
+    if not available:
         return None
 
-    prompt = f"""You are an autonomous BDR research agent. Pick the best next action.
+    # Avoid repeating the last action
+    last_action = history[-1]["action"] if history else None
+    diverse = [a for a in available if a["id"] != last_action]
+    if diverse:
+        available = diverse
+
+    # Try LLM-based selection
+    try:
+        history_str = "\n".join(
+            f"  - {h['action']}: delta={h['delta']}, cost=${h['cost']:.3f}, {h['duration_s']:.0f}s"
+            for h in history[-10:]
+        ) or "  (no history yet)"
+
+        actions_str = "\n".join(
+            f"  - {a['id']}: {a['description']} (est. ${a['cost_estimate']:.2f}, ~{a['time_estimate_s']}s)"
+            for a in available
+        )
+
+        prompt = f"""You are an autonomous BDR research agent. Pick the best next action.
 
 STRATEGY: {strategy}
 BUDGET REMAINING: ${remaining_budget:.2f}
@@ -205,20 +216,28 @@ Rules:
 
 Respond with ONLY the action id (e.g., "signal_scan"). Nothing else."""
 
-    response = routed_call(
-        phase="scoring",
-        system_prompt="You are a decision engine. Respond with a single action id.",
-        user_prompt=prompt,
-    )
+        response = routed_call(
+            phase="scoring",
+            system_prompt="You are a decision engine. Respond with a single action id.",
+            user_prompt=prompt,
+        )
 
-    action_id = response.strip().lower().replace('"', '').replace("'", "")
-    for a in ACTIONS:
-        if a["id"] == action_id:
-            return a
+        if response:
+            action_id = response.strip().lower().replace('"', '').replace("'", "")
+            for a in available:
+                if a["id"] == action_id:
+                    return a
+    except Exception:
+        pass
 
-    # Fallback: pick cheapest available
-    available = [a for a in ACTIONS if a["cost_estimate"] <= remaining_budget and a["time_estimate_s"] <= remaining_time_s]
-    return available[0] if available else None
+    # Fallback: round-robin through available actions
+    if history:
+        seen = [h["action"] for h in history]
+        # Pick the action used least recently
+        for a in available:
+            if a["id"] not in seen:
+                return a
+    return available[0]
 
 
 def run_action(action):
