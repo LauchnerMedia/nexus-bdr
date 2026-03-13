@@ -1,9 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import NexusV5 from '../scripts/nexus_v5.jsx'
+import NexusDashboard from '../scripts/nexus_dashboard.jsx'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <NexusV5 />
+    <NexusDashboard />
   </React.StrictMode>
 )
