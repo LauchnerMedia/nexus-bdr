@@ -442,6 +442,9 @@ def build_snapshot():
     # ── Research Intelligence ──
     _load_research_into_snapshot(snapshot)
 
+    # ── Integration Hub Data ──
+    _load_integration_hub_into_snapshot(snapshot)
+
     # ── Event count ──
     if EVENTS_FILE.exists():
         try:
@@ -451,6 +454,65 @@ def build_snapshot():
             pass
 
     return snapshot
+
+
+def _load_integration_hub_into_snapshot(snapshot):
+    """Load Integration Hub status and data into snapshot."""
+    # Integration config
+    config_path = SCRIPT_DIR.parent / "config" / "integrations.json"
+    if not config_path.exists():
+        config_path = SCRIPT_DIR / "config" / "integrations.json"
+
+    hub_status = {"total": 0, "active": 0, "services": [], "tiers": {}}
+
+    if config_path.exists():
+        try:
+            config = json.loads(config_path.read_text())
+            for tier_name, tier in config.get("integrations", {}).items():
+                tier_active = 0
+                tier_total = 0
+                for svc_name, svc in tier.items():
+                    tier_total += 1
+                    hub_status["total"] += 1
+                    env_vars = [v for k, v in svc.items() if k.endswith("_env") and isinstance(v, str)]
+                    is_active = any(bool(os.environ.get(ev)) for ev in env_vars) if env_vars else False
+                    if is_active:
+                        hub_status["active"] += 1
+                        tier_active += 1
+                    hub_status["services"].append({
+                        "name": svc_name,
+                        "tier": tier_name,
+                        "description": svc.get("description", ""),
+                        "active": is_active,
+                        "cost": svc.get("cost", ""),
+                    })
+                hub_status["tiers"][tier_name] = {"active": tier_active, "total": tier_total}
+        except Exception as e:
+            print(f"  Warning: integration config load failed: {e}")
+
+    # Integration outputs (enrichments, scans, briefings)
+    hub_dir = OUTPUT_DIR / "integrations"
+    hub_outputs = {"enrichments": 0, "competitive_scans": 0, "gmaps_discoveries": 0, "morning_briefings": 0, "recent_activity": []}
+
+    if hub_dir.exists():
+        hub_outputs["enrichments"] = len(list(hub_dir.glob("enriched_*.json")))
+        hub_outputs["competitive_scans"] = len(list(hub_dir.glob("competitive_scan_*.json")))
+        hub_outputs["gmaps_discoveries"] = len(list(hub_dir.glob("gmaps_leads_*.json")))
+        hub_outputs["morning_briefings"] = len(list(hub_dir.glob("morning_briefing_*.json")))
+
+        # Recent activity log
+        activity_log = hub_dir / "integration-activity-log.json"
+        if activity_log.exists():
+            try:
+                activities = json.loads(activity_log.read_text())
+                hub_outputs["recent_activity"] = activities[-20:]
+            except Exception:
+                pass
+
+    snapshot["integrationHub"] = hub_status
+    snapshot["integrationOutputs"] = hub_outputs
+    snapshot["systemStatus"]["integrationsActive"] = hub_status["active"]
+    snapshot["systemStatus"]["integrationsTotal"] = hub_status["total"]
 
 
 def _load_research_into_snapshot(snapshot):
@@ -664,6 +726,7 @@ AGENT_REGISTRY = [
     {"agent_id": "kill_shot_bundle", "name": "Kill Shot Bundle", "description": "Generates send-ready outreach packages", "commands": ["--generate", "--company"], "script": "kill_shot_bundle.py", "tier": "outreach"},
     {"agent_id": "enrich_pipeline", "name": "Enrich Pipeline", "description": "Email verification, data enrichment", "commands": ["--enrich"], "script": "enrich_pipeline_v2.py", "tier": "pipeline"},
     {"agent_id": "heygen_scripts", "name": "HeyGen Scripts", "description": "Video script generation for personalized outreach", "commands": ["--generate"], "script": "heygen_scripts.py", "tier": "outreach"},
+    {"agent_id": "integration_hub", "name": "Integration Hub", "description": "30+ service integrations: Clearbit, email chain, Instantly, Firecrawl, Apify, Slack, Stripe, Klaviyo, Pinecone, HuggingFace", "commands": ["status", "enrich", "verify", "research", "competitive", "gmaps", "notify", "morning", "campaigns", "revenue"], "script": "integration_hub.py", "tier": "integration"},
     # ── Karpathy-inspired additions ──
     {"agent_id": "llm_council", "name": "LLM Council", "description": "Multi-model consensus for high-stakes positioning and deal strategy decisions", "commands": ["--deliberate"], "script": "llm_council.py", "tier": "strategy"},
     {"agent_id": "auto_research", "name": "AutoResearch", "description": "Autonomous research loop — runs experiments within time/cost budget", "commands": ["--budget-minutes", "--max-cost", "--strategy", "--dry-run"], "script": "auto_research.py", "tier": "autonomous"},
@@ -833,6 +896,17 @@ class PlatformHandler(BaseHTTPRequestHandler):
             limit = int((qs.get("limit") or ["50"])[0])
             events = get_events(since=since, limit=limit)
             self._json({"events": events, "count": len(events)})
+
+        # ── Integration Hub ──
+        elif path == "/api/reef/integrations":
+            snap = build_snapshot()
+            self._json({
+                "schema_version": SCHEMA_VERSION,
+                "hub": snap.get("integrationHub", {}),
+                "outputs": snap.get("integrationOutputs", {}),
+                "services": snap.get("integrationHub", {}).get("services", []),
+                "tiers": snap.get("integrationHub", {}).get("tiers", {}),
+            })
 
         # ── Agent Registry (Epic 1.1 foundation) ──
         elif path == "/api/agents":
