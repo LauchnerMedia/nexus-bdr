@@ -48,6 +48,19 @@ Environment:
     HUNTER_API_KEY        — Email verification
     GHL_API_KEY           — CRM sync
     HEYGEN_API_KEY        — Video generation (optional)
+
+Integration Hub (30+ services):
+    python3 nexus.py hub status         # Show active integrations
+    python3 nexus.py hub enrich <domain> # Deep-enrich a company (Clearbit + Firecrawl + email)
+    python3 nexus.py hub verify <email>  # Multi-provider email verification chain
+    python3 nexus.py hub research <domain> # Firecrawl website research
+    python3 nexus.py hub competitive <d1,d2> # Competitive intelligence scan
+    python3 nexus.py hub gmaps <query>   # Google Maps lead discovery
+    python3 nexus.py hub notify <msg>    # Broadcast to Slack/Telegram/Discord
+    python3 nexus.py hub morning         # Morning intelligence blast (campaigns + revenue + alerts)
+    python3 nexus.py hub campaigns       # List outreach campaign stats
+    python3 nexus.py hub revenue <email> # Stripe revenue lookup
+    python3 nexus.py hub outreach <campaign_id> # Launch outreach for hot leads
 """
 
 import os, sys, json, re, time, argparse, glob
@@ -77,13 +90,48 @@ def check_status():
     print(f"  {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}")
     print(f"{'═'*60}\n")
 
-    # API Keys
+    # API Keys — Core
     apis = {
         "ANTHROPIC_API_KEY": ("Claude AI (Premium)", True),
         "OPENROUTER_API_KEY": ("OpenRouter (Cost Opt)", False),
         "HUNTER_API_KEY": ("Hunter.io (Email)", False),
         "GHL_API_KEY": ("GoHighLevel (CRM)", False),
         "HEYGEN_API_KEY": ("HeyGen (Video)", False),
+        # Integration Hub — Tier 1: Revenue
+        "CLEARBIT_API_KEY": ("Clearbit (Enrichment)", False),
+        "FINDYMAIL_API_KEY": ("Findymail (Email Finder)", False),
+        "ZEROBOUNCE_API_KEY": ("ZeroBounce (Email Valid)", False),
+        "INSTANTLY_API_KEY": ("Instantly (Outreach)", False),
+        "LEMLIST_API_KEY": ("lemlist (Sequences)", False),
+        "CALENDLY_API_KEY": ("Calendly (Scheduling)", False),
+        "HUBSPOT_API_KEY": ("HubSpot (CRM)", False),
+        # Tier 2: Intelligence
+        "APIFY_API_KEY": ("Apify (Web Scraping)", False),
+        "FIRECRAWL_API_KEY": ("Firecrawl (AI Crawl)", False),
+        "SIMILARWEB_API_KEY": ("SimilarWeb (Traffic)", False),
+        "AHREFS_API_KEY": ("Ahrefs (SEO Intel)", False),
+        "PINECONE_API_KEY": ("Pinecone (Vector DB)", False),
+        # Tier 3: Communication
+        "SLACK_WEBHOOK_URL": ("Slack (Notifications)", False),
+        "TELEGRAM_BOT_TOKEN": ("Telegram (Alerts)", False),
+        "DISCORD_WEBHOOK_URL": ("Discord (Team)", False),
+        "TWILIO_ACCOUNT_SID": ("Twilio (SMS/Voice)", False),
+        "SENDGRID_API_KEY": ("SendGrid (Email)", False),
+        # Tier 4: Analytics
+        "STRIPE_API_KEY": ("Stripe (Revenue)", False),
+        "KLAVIYO_API_KEY": ("Klaviyo (Marketing)", False),
+        "POSTHOG_API_KEY": ("PostHog (Analytics)", False),
+        # Tier 5: AI Enhancement
+        "HUGGINGFACE_API_KEY": ("HuggingFace (ML)", False),
+        "REPLICATE_API_KEY": ("Replicate (Models)", False),
+        "DEEPGRAM_API_KEY": ("Deepgram (Transcription)", False),
+        "LEONARDO_API_KEY": ("Leonardo AI (Images)", False),
+        # Tier 6: Data Enrichment
+        "LUSHA_API_KEY": ("Lusha (Contact Data)", False),
+        "CONTACTOUT_API_KEY": ("ContactOut (LinkedIn)", False),
+        "TOMBA_API_KEY": ("Tomba (Email Finder)", False),
+        "LINKUP_API_KEY": ("LinkupAPI (LinkedIn)", False),
+        "GOOGLE_MAPS_API_KEY": ("Google Maps (Places)", False),
     }
 
     print("  API CONNECTIONS:")
@@ -109,6 +157,7 @@ def check_status():
         ("csv_importer_v2.py", "CSV Importer"),
         ("ghl_sync_v2.py", "GHL Sync"),
         ("enrich_pipeline_v2.py", "Enrichment Pipeline"),
+        ("integration_hub.py", "Integration Hub (30+ services)"),
     ]
 
     for script, label in agents:
@@ -562,6 +611,88 @@ Commands:
 
     elif cmd == "demo":
         demo_mode()
+
+    elif cmd == "hub":
+        # Integration Hub — pass through to integration_hub.py
+        sys.path.insert(0, str(SCRIPT_DIR))
+        from integration_hub import IntegrationHub
+        hub = IntegrationHub()
+        sub = args.target.lower() if args.target else ""
+
+        if sub == "status":
+            hub.print_status()
+        elif sub == "enrich" and args.domain:
+            lead = {"domain": args.domain, "company_name": args.domain.split(".")[0].title()}
+            result = hub.deep_enrich_lead(lead)
+            out = OUTPUT_DIR / "integrations" / f"enriched_{args.domain}_{datetime.utcnow().strftime('%Y%m%d_%H%M')}.json"
+            out.parent.mkdir(parents=True, exist_ok=True)
+            with open(out, "w") as f:
+                json.dump(result, f, indent=2, default=str)
+            print(f"\n  ✅ Deep enrichment saved to {out}")
+        elif sub == "verify" and args.domain:
+            # --domain doubles as email arg here
+            result = hub.email_chain.verify(args.domain)
+            print(json.dumps(result, indent=2))
+        elif sub == "research" and args.domain:
+            result = hub.firecrawl.research_company(args.domain)
+            out = OUTPUT_DIR / "integrations" / f"research_{args.domain}_{datetime.utcnow().strftime('%Y%m%d_%H%M')}.json"
+            out.parent.mkdir(parents=True, exist_ok=True)
+            with open(out, "w") as f:
+                json.dump(result, f, indent=2, default=str)
+            print(f"\n  ✅ Research saved to {out}")
+        elif sub == "competitive" and args.domain:
+            domains = args.domain.split(",")
+            hub.run_competitive_scan(domains)
+        elif sub == "gmaps" and args.domain:
+            result = hub.discover_leads_google_maps(args.domain)
+            print(json.dumps(result, indent=2, default=str)[:2000])
+        elif sub == "notify" and args.domain:
+            result = hub.notifications.broadcast(args.domain)
+            print(json.dumps(result, indent=2))
+        elif sub == "morning":
+            scored = sorted(OUTPUT_DIR.glob("scored_apollo_*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+            pipeline_data = []
+            if scored:
+                with open(scored[0]) as f:
+                    data = json.load(f)
+                pipeline_data = data.get("leads", data) if isinstance(data, dict) else data
+            result = hub.morning_intel_blast(pipeline_data)
+            print(json.dumps(result, indent=2, default=str)[:2000])
+        elif sub == "campaigns":
+            result = hub.outreach.get_instantly_campaigns()
+            print(json.dumps(result, indent=2, default=str)[:2000])
+        elif sub == "revenue" and args.domain:
+            result = hub.revenue.get_customer_revenue(args.domain)
+            print(json.dumps(result, indent=2))
+        elif sub == "outreach" and args.domain:
+            # Launch outreach for all hot leads in pipeline
+            scored = sorted(OUTPUT_DIR.glob("scored_apollo_*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+            if not scored:
+                print("  No pipeline data found.")
+            else:
+                with open(scored[0]) as f:
+                    data = json.load(f)
+                leads = data.get("leads", data) if isinstance(data, dict) else data
+                hot = [l for l in leads if l.get("prospect_temperature") == "Hot" and l.get("email")]
+                print(f"  Launching outreach for {len(hot)} hot leads...")
+                for lead in hot[:20]:
+                    result = hub.launch_outreach_sequence(lead, campaign_id=args.domain)
+                    print(f"    → {lead.get('company_name')}: {lead.get('email')}")
+        else:
+            print("""
+  Integration Hub Commands (use via: python3 nexus.py hub <cmd> --domain <value>):
+    hub status                        Active/inactive integrations
+    hub enrich --domain <domain>      Deep-enrich company (Clearbit+Firecrawl+email)
+    hub verify --domain <email>       Multi-provider email verification
+    hub research --domain <domain>    Firecrawl website research
+    hub competitive --domain <d1,d2>  Competitive intelligence scan
+    hub gmaps --domain <query>        Google Maps lead discovery
+    hub notify --domain <message>     Broadcast to Slack/Telegram/Discord
+    hub morning                       Morning intel blast (campaigns+revenue+alerts)
+    hub campaigns                     List outreach campaign stats
+    hub revenue --domain <email>      Stripe revenue by customer
+    hub outreach --domain <camp_id>   Launch outreach for hot pipeline leads
+            """)
 
     else:
         parser.print_help()

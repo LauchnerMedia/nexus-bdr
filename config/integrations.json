@@ -1,0 +1,300 @@
+{
+  "integrations": {
+    "tier_1_revenue": {
+      "apollo": {
+        "enabled": true,
+        "api_key_env": "APOLLO_API_KEY",
+        "description": "Lead discovery & enrichment",
+        "rate_limit": "100 req/min",
+        "cost": "Credits-based"
+      },
+      "clearbit": {
+        "enabled": true,
+        "api_key_env": "CLEARBIT_API_KEY",
+        "description": "B2B lead enrichment, firmographics, technographics",
+        "rate_limit": "600 req/min",
+        "cost": "Credits-based",
+        "endpoints": {
+          "enrich_company": "https://company.clearbit.com/v2/companies/find",
+          "enrich_person": "https://person.clearbit.com/v2/people/find",
+          "reveal": "https://reveal.clearbit.com/v1/companies/find"
+        }
+      },
+      "hunter": {
+        "enabled": true,
+        "api_key_env": "HUNTER_API_KEY",
+        "description": "Email finding & verification",
+        "rate_limit": "15 req/sec",
+        "cost": "Free tier: 25/mo"
+      },
+      "findymail": {
+        "enabled": true,
+        "api_key_env": "FINDYMAIL_API_KEY",
+        "description": "B2B email finder (backup/supplement to Hunter)",
+        "rate_limit": "10 req/sec",
+        "cost": "Credits-based"
+      },
+      "zerobounce": {
+        "enabled": true,
+        "api_key_env": "ZEROBOUNCE_API_KEY",
+        "description": "Email validation & deliverability scoring",
+        "rate_limit": "100 req/sec",
+        "cost": "Free tier: 100/mo"
+      },
+      "instantly": {
+        "enabled": true,
+        "api_key_env": "INSTANTLY_API_KEY",
+        "description": "Cold email campaign automation & warmup",
+        "rate_limit": "10 req/sec",
+        "cost": "$30/mo",
+        "endpoints": {
+          "campaigns": "https://api.instantly.ai/api/v1/campaign/list",
+          "leads": "https://api.instantly.ai/api/v1/lead/add",
+          "analytics": "https://api.instantly.ai/api/v1/analytics/campaign/summary"
+        }
+      },
+      "lemlist": {
+        "enabled": true,
+        "api_key_env": "LEMLIST_API_KEY",
+        "description": "Multi-channel outreach sequences (email + LinkedIn + calls)",
+        "rate_limit": "100 req/min",
+        "cost": "$59/mo"
+      },
+      "calendly": {
+        "enabled": true,
+        "api_key_env": "CALENDLY_API_KEY",
+        "description": "Meeting scheduling & booking links",
+        "rate_limit": "100 req/min",
+        "cost": "Free tier available"
+      },
+      "ghl": {
+        "enabled": true,
+        "api_key_env": "GHL_API_KEY",
+        "description": "GoHighLevel CRM (primary)",
+        "rate_limit": "100 req/10sec"
+      },
+      "hubspot": {
+        "enabled": true,
+        "api_key_env": "HUBSPOT_API_KEY",
+        "description": "HubSpot CRM (secondary/enterprise)",
+        "rate_limit": "100 req/10sec"
+      }
+    },
+    "tier_2_intelligence": {
+      "apify": {
+        "enabled": true,
+        "api_key_env": "APIFY_API_KEY",
+        "description": "Web scraping actors (LinkedIn, Google Maps, Yelp, etc.)",
+        "rate_limit": "varies by actor",
+        "cost": "$49/mo",
+        "actors": {
+          "linkedin_scraper": "apify/linkedin-scraper",
+          "google_maps": "apify/google-maps-scraper",
+          "instagram": "apify/instagram-scraper",
+          "yelp": "apify/yelp-scraper",
+          "website_content": "apify/website-content-crawler",
+          "google_search": "apify/google-search-scraper"
+        }
+      },
+      "firecrawl": {
+        "enabled": true,
+        "api_key_env": "FIRECRAWL_API_KEY",
+        "description": "AI-powered web crawling for company research",
+        "rate_limit": "10 req/sec",
+        "cost": "$16/mo",
+        "endpoints": {
+          "scrape": "https://api.firecrawl.dev/v1/scrape",
+          "crawl": "https://api.firecrawl.dev/v1/crawl",
+          "search": "https://api.firecrawl.dev/v1/search"
+        }
+      },
+      "similarweb": {
+        "enabled": true,
+        "api_key_env": "SIMILARWEB_API_KEY",
+        "description": "Website traffic analytics & competitive digital intelligence",
+        "rate_limit": "10 req/sec",
+        "cost": "Free tier available"
+      },
+      "ahrefs": {
+        "enabled": true,
+        "api_key_env": "AHREFS_API_KEY",
+        "description": "SEO intelligence, backlinks, organic keywords",
+        "rate_limit": "varies",
+        "cost": "$99/mo"
+      },
+      "google_sheets": {
+        "enabled": true,
+        "credentials_env": "GOOGLE_SHEETS_CREDENTIALS",
+        "description": "Spreadsheet data import/export for team collaboration",
+        "rate_limit": "300 req/min"
+      },
+      "pinecone": {
+        "enabled": true,
+        "api_key_env": "PINECONE_API_KEY",
+        "description": "Vector database for knowledge graph embeddings & semantic search",
+        "cost": "Free tier: 1 index",
+        "index_name": "nexus-knowledge-graph",
+        "dimension": 1536
+      },
+      "snowflake": {
+        "enabled": true,
+        "credentials_env": "SNOWFLAKE_CREDENTIALS",
+        "description": "Data warehouse for historical analytics & trend analysis"
+      },
+      "postmark": {
+        "enabled": true,
+        "api_key_env": "POSTMARK_API_KEY",
+        "description": "Transactional email delivery (alerts, reports, briefs)"
+      }
+    },
+    "tier_3_communication": {
+      "twilio": {
+        "enabled": true,
+        "account_sid_env": "TWILIO_ACCOUNT_SID",
+        "auth_token_env": "TWILIO_AUTH_TOKEN",
+        "description": "SMS/Voice outreach & alerts",
+        "cost": "$0.0079/SMS"
+      },
+      "sendgrid": {
+        "enabled": true,
+        "api_key_env": "SENDGRID_API_KEY",
+        "description": "Email delivery for outreach sequences",
+        "rate_limit": "600 req/min",
+        "cost": "Free tier: 100/day"
+      },
+      "slack": {
+        "enabled": true,
+        "webhook_env": "SLACK_WEBHOOK_URL",
+        "bot_token_env": "SLACK_BOT_TOKEN",
+        "description": "Team notifications, daily briefings, hot lead alerts",
+        "channels": {
+          "hot_leads": "#nexus-hot-leads",
+          "daily_brief": "#nexus-daily-brief",
+          "competitor_intel": "#nexus-competitor-intel",
+          "pipeline_updates": "#nexus-pipeline"
+        }
+      },
+      "discord": {
+        "enabled": true,
+        "webhook_env": "DISCORD_WEBHOOK_URL",
+        "bot_token_env": "DISCORD_BOT_TOKEN",
+        "description": "Alternative team notifications & community monitoring"
+      },
+      "telegram": {
+        "enabled": true,
+        "bot_token_env": "TELEGRAM_BOT_TOKEN",
+        "chat_id_env": "TELEGRAM_CHAT_ID",
+        "description": "Mobile-first alerts for urgent signals"
+      },
+      "whatsapp": {
+        "enabled": true,
+        "api_key_env": "WHATSAPP_API_KEY",
+        "description": "WhatsApp Business outreach (Z-API or Twilio)",
+        "provider": "twilio"
+      }
+    },
+    "tier_4_analytics": {
+      "google_analytics": {
+        "enabled": true,
+        "credentials_env": "GA_CREDENTIALS",
+        "property_id_env": "GA_PROPERTY_ID",
+        "description": "Website visitor analytics & attribution"
+      },
+      "stripe": {
+        "enabled": true,
+        "api_key_env": "STRIPE_API_KEY",
+        "description": "Payment tracking & revenue attribution",
+        "cost": "2.9% + $0.30"
+      },
+      "klaviyo": {
+        "enabled": true,
+        "api_key_env": "KLAVIYO_API_KEY",
+        "description": "Marketing automation, email campaigns, customer segments",
+        "rate_limit": "75 req/sec"
+      },
+      "posthog": {
+        "enabled": true,
+        "api_key_env": "POSTHOG_API_KEY",
+        "host_env": "POSTHOG_HOST",
+        "description": "Product analytics, session recording, feature flags"
+      },
+      "metabase": {
+        "enabled": true,
+        "url_env": "METABASE_URL",
+        "api_key_env": "METABASE_API_KEY",
+        "description": "BI dashboards for pipeline & revenue analytics"
+      }
+    },
+    "tier_5_ai_enhancement": {
+      "heygen": {
+        "enabled": true,
+        "api_key_env": "HEYGEN_API_KEY",
+        "description": "AI video generation for personalized outreach"
+      },
+      "deepgram": {
+        "enabled": true,
+        "api_key_env": "DEEPGRAM_API_KEY",
+        "description": "Speech-to-text for call transcription & analysis"
+      },
+      "huggingface": {
+        "enabled": true,
+        "api_key_env": "HUGGINGFACE_API_KEY",
+        "description": "Open-source ML models for sentiment analysis, classification"
+      },
+      "replicate": {
+        "enabled": true,
+        "api_key_env": "REPLICATE_API_KEY",
+        "description": "Run ML models for lead scoring, image generation"
+      },
+      "leonardo_ai": {
+        "enabled": true,
+        "api_key_env": "LEONARDO_API_KEY",
+        "description": "AI image generation for outreach assets & social content"
+      }
+    },
+    "tier_6_data_enrichment": {
+      "lusha": {
+        "enabled": true,
+        "api_key_env": "LUSHA_API_KEY",
+        "description": "B2B contact enrichment (phone, email, company data)"
+      },
+      "contactout": {
+        "enabled": true,
+        "api_key_env": "CONTACTOUT_API_KEY",
+        "description": "Email & phone finder from LinkedIn profiles"
+      },
+      "tomba": {
+        "enabled": true,
+        "api_key_env": "TOMBA_API_KEY",
+        "description": "Professional email finder & verifier"
+      },
+      "linkup_api": {
+        "enabled": true,
+        "api_key_env": "LINKUP_API_KEY",
+        "description": "LinkedIn data access for B2B prospecting"
+      },
+      "google_maps": {
+        "enabled": true,
+        "api_key_env": "GOOGLE_MAPS_API_KEY",
+        "description": "Places API for local business discovery & verification"
+      }
+    }
+  },
+  "routing": {
+    "email_verification_chain": ["hunter", "findymail", "zerobounce", "tomba"],
+    "enrichment_chain": ["clearbit", "lusha", "contactout", "apollo"],
+    "outreach_chain": ["instantly", "lemlist", "sendgrid"],
+    "notification_chain": ["slack", "telegram", "discord"],
+    "web_scraping_chain": ["firecrawl", "apify"],
+    "crm_chain": ["ghl", "hubspot"]
+  },
+  "defaults": {
+    "primary_crm": "ghl",
+    "primary_outreach": "instantly",
+    "primary_email_verifier": "hunter",
+    "primary_enrichment": "clearbit",
+    "primary_notifications": "slack",
+    "primary_web_scraper": "firecrawl",
+    "primary_analytics": "google_analytics"
+  }
+}
