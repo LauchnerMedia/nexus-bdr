@@ -68,7 +68,151 @@ EVENTS_DIR = OUTPUT_DIR / "events"
 EVENTS_DIR.mkdir(parents=True, exist_ok=True)
 EVENTS_FILE = EVENTS_DIR / "events.jsonl"
 
-SCHEMA_VERSION = "5.0"
+SCHEMA_VERSION = "7.0"
+
+# ═══════════════════════════════════════════════════════════
+# ONTOLOGY ENGINE (Karpathy minbpe-inspired: clean hierarchy)
+# ═══════════════════════════════════════════════════════════
+
+ONTOLOGY_VERSION = "1.0"
+
+# Department → object types → relationship mapping
+DEPARTMENT_ONTOLOGY = {
+    "bdr": {
+        "objects": ["company", "contact", "signal", "opportunity"],
+        "actions": ["prospect", "outreach", "qualify", "brief"],
+        "metrics": ["pipeline_value", "response_rate", "meetings_booked"],
+    },
+    "rd": {
+        "objects": ["paper", "terpene", "mechanism", "study"],
+        "actions": ["harvest", "synthesize", "gap_analysis", "profile"],
+        "metrics": ["papers_indexed", "evidence_grade", "trend_velocity"],
+    },
+    "marketing": {
+        "objects": ["campaign", "content", "persona", "channel"],
+        "actions": ["create_content", "segment", "analyze_engagement"],
+        "metrics": ["engagement_rate", "content_pieces", "channel_reach"],
+    },
+    "ops": {
+        "objects": ["agent", "pipeline", "workflow", "integration"],
+        "actions": ["deploy", "monitor", "optimize", "sync"],
+        "metrics": ["uptime", "cost_per_action", "throughput"],
+    },
+    "compliance": {
+        "objects": ["regulation", "claim", "evidence", "label"],
+        "actions": ["review_claims", "check_compliance", "flag_risk"],
+        "metrics": ["claims_reviewed", "risk_flags", "compliant_rate"],
+    },
+    "executive": {
+        "objects": ["kpi", "forecast", "decision", "risk"],
+        "actions": ["review_dashboard", "approve_strategy", "allocate_budget"],
+        "metrics": ["revenue_pipeline", "win_rate", "cost_efficiency"],
+    },
+}
+
+
+class OntologyIndex:
+    """
+    Lightweight ontology index over war room + research data.
+    Indexes objects by type and links them by relationship.
+    """
+
+    def __init__(self):
+        self.objects = {}   # id → {type, name, data, links}
+        self.links = []     # [{source, target, relation}]
+        self.type_counts = Counter()
+
+    def add(self, obj_id, obj_type, name, data=None):
+        self.objects[obj_id] = {
+            "id": obj_id,
+            "type": obj_type,
+            "name": name,
+            "data": data or {},
+        }
+        self.type_counts[obj_type] += 1
+
+    def link(self, source_id, target_id, relation):
+        if source_id in self.objects and target_id in self.objects:
+            self.links.append({
+                "source": source_id,
+                "target": target_id,
+                "relation": relation,
+            })
+
+    def by_type(self, obj_type):
+        return [o for o in self.objects.values() if o["type"] == obj_type]
+
+    def for_department(self, department):
+        dept = DEPARTMENT_ONTOLOGY.get(department, {})
+        relevant_types = dept.get("objects", [])
+        return {
+            "department": department,
+            "objects": {t: self.by_type(t) for t in relevant_types},
+            "actions": dept.get("actions", []),
+            "metrics": dept.get("metrics", []),
+            "object_counts": {t: len(self.by_type(t)) for t in relevant_types},
+        }
+
+    def summary(self):
+        return {
+            "version": ONTOLOGY_VERSION,
+            "total_objects": len(self.objects),
+            "total_links": len(self.links),
+            "type_counts": dict(self.type_counts),
+            "departments": list(DEPARTMENT_ONTOLOGY.keys()),
+        }
+
+
+def build_ontology_index():
+    """Build ontology index from existing data sources."""
+    idx = OntologyIndex()
+
+    # Index war room entities
+    graph_path = WAR_ROOM_DIR / "knowledge_graph" / "war_room_graph.json"
+    if graph_path.exists():
+        try:
+            g = json.loads(graph_path.read_text())
+            for eid, entity in g.get("entities", {}).items():
+                idx.add(eid, entity.get("type", "unknown"), entity.get("name", eid), entity.get("data"))
+
+            # Index signals as objects
+            for sig in g.get("signals", [])[-100:]:
+                sig_id = sig.get("id", f"sig_{len(idx.objects)}")
+                idx.add(sig_id, "signal", sig.get("type", "unknown"), sig)
+
+                # Link signals to entities
+                for ent in sig.get("entities", []):
+                    if ent in idx.objects:
+                        idx.link(sig_id, ent, "about")
+        except Exception as e:
+            print(f"  Ontology: war room index error: {e}")
+
+    # Index research papers
+    kb_path = KB_DIR / "kb.json"
+    if kb_path.exists():
+        try:
+            kb = json.loads(kb_path.read_text())
+            for pid, paper in list(kb.get("papers", {}).items())[:50]:
+                idx.add(f"paper_{pid}", "paper", paper.get("title", pid)[:80], paper)
+        except Exception:
+            pass
+
+    # Index regulations
+    reg_path = INSIGHTS_DIR / "regulatory.json"
+    if reg_path.exists():
+        try:
+            reg = json.loads(reg_path.read_text())
+            for i, hit in enumerate(reg.get("regulatory_hits", [])[:50]):
+                idx.add(f"reg_{i}", "regulation", hit.get("title", f"reg_{i}")[:80], hit)
+        except Exception:
+            pass
+
+    print(f"  Ontology: indexed {len(idx.objects)} objects from existing data: {dict(idx.type_counts)}")
+    return idx
+
+
+# Build ontology at startup
+_ontology = build_ontology_index()
 
 
 # ═══════════════════════════════════════════════════════════
@@ -510,16 +654,19 @@ def _best_grade(insight):
 # ═══════════════════════════════════════════════════════════
 
 AGENT_REGISTRY = [
-    {"agent_id": "terpene_research", "name": "PhD Research Engine", "description": "Harvests PubMed, grades evidence, synthesizes insights, detects trends", "commands": ["--harvest", "--full", "--synthesize", "--trends", "--profile", "--gaps", "--regulatory", "--digest", "--executive-brief"], "script": "terpene_research_v2.py"},
-    {"agent_id": "war_room", "name": "War Room", "description": "Knowledge graph, signal processing, decision engine, learning attribution", "commands": ["--ingest", "--decide", "--learn", "--status"], "script": "war_room.py"},
-    {"agent_id": "apollo_pipeline", "name": "Apollo Pipeline", "description": "Contact/company prospecting via Apollo.io", "commands": ["--search", "--enrich"], "script": "apollo_pipeline.py"},
-    {"agent_id": "competitor_vuln", "name": "Competitor Intelligence", "description": "Vulnerability scanning, displacement playbooks", "commands": ["--scan", "--report"], "script": "competitor_vuln_v2.py"},
-    {"agent_id": "social_intel", "name": "Social Intel Engine", "description": "Reddit, forum, social media signal harvesting", "commands": ["--scan", "--reddit", "--report"], "script": "social_intel_engine_v2.py"},
-    {"agent_id": "trigger_monitor", "name": "Trigger Monitor", "description": "Monitors hiring, news, review changes for target accounts", "commands": ["--scan", "--alerts"], "script": "trigger_monitor.py"},
-    {"agent_id": "sales_intel_brief", "name": "Sales Intel Brief", "description": "Generates account-level intelligence briefs", "commands": ["--generate", "--company"], "script": "sales_intel_brief_v4.py"},
-    {"agent_id": "kill_shot_bundle", "name": "Kill Shot Bundle", "description": "Generates send-ready outreach packages", "commands": ["--generate", "--company"], "script": "kill_shot_bundle.py"},
-    {"agent_id": "enrich_pipeline", "name": "Enrich Pipeline", "description": "Email verification, data enrichment", "commands": ["--enrich"], "script": "enrich_pipeline_v2.py"},
-    {"agent_id": "heygen_scripts", "name": "HeyGen Scripts", "description": "Video script generation for personalized outreach", "commands": ["--generate"], "script": "heygen_scripts.py"},
+    {"agent_id": "terpene_research", "name": "PhD Research Engine", "description": "Harvests PubMed, grades evidence, synthesizes insights, detects trends", "commands": ["--harvest", "--full", "--synthesize", "--trends", "--profile", "--gaps", "--regulatory", "--digest", "--executive-brief"], "script": "terpene_research_v2.py", "tier": "research"},
+    {"agent_id": "war_room", "name": "War Room", "description": "Knowledge graph, signal processing, decision engine, learning attribution", "commands": ["--ingest", "--decide", "--learn", "--status"], "script": "war_room.py", "tier": "core"},
+    {"agent_id": "apollo_pipeline", "name": "Apollo Pipeline", "description": "Contact/company prospecting via Apollo.io", "commands": ["--search", "--enrich"], "script": "apollo_pipeline.py", "tier": "pipeline"},
+    {"agent_id": "competitor_vuln", "name": "Competitor Intelligence", "description": "Vulnerability scanning, displacement playbooks", "commands": ["--scan", "--report"], "script": "competitor_vuln_v2.py", "tier": "intel"},
+    {"agent_id": "social_intel", "name": "Social Intel Engine", "description": "Reddit, forum, social media signal harvesting", "commands": ["--scan", "--reddit", "--report"], "script": "social_intel_engine_v2.py", "tier": "intel"},
+    {"agent_id": "trigger_monitor", "name": "Trigger Monitor", "description": "Monitors hiring, news, review changes for target accounts", "commands": ["--scan", "--alerts"], "script": "trigger_monitor.py", "tier": "intel"},
+    {"agent_id": "sales_intel_brief", "name": "Sales Intel Brief", "description": "Generates account-level intelligence briefs", "commands": ["--generate", "--company"], "script": "sales_intel_brief_v4.py", "tier": "outreach"},
+    {"agent_id": "kill_shot_bundle", "name": "Kill Shot Bundle", "description": "Generates send-ready outreach packages", "commands": ["--generate", "--company"], "script": "kill_shot_bundle.py", "tier": "outreach"},
+    {"agent_id": "enrich_pipeline", "name": "Enrich Pipeline", "description": "Email verification, data enrichment", "commands": ["--enrich"], "script": "enrich_pipeline_v2.py", "tier": "pipeline"},
+    {"agent_id": "heygen_scripts", "name": "HeyGen Scripts", "description": "Video script generation for personalized outreach", "commands": ["--generate"], "script": "heygen_scripts.py", "tier": "outreach"},
+    # ── Karpathy-inspired additions ──
+    {"agent_id": "llm_council", "name": "LLM Council", "description": "Multi-model consensus for high-stakes positioning and deal strategy decisions", "commands": ["--deliberate"], "script": "llm_council.py", "tier": "strategy"},
+    {"agent_id": "auto_research", "name": "AutoResearch", "description": "Autonomous research loop — runs experiments within time/cost budget", "commands": ["--budget-minutes", "--max-cost", "--strategy", "--dry-run"], "script": "auto_research.py", "tier": "autonomous"},
 ]
 
 
@@ -691,6 +838,53 @@ class PlatformHandler(BaseHTTPRequestHandler):
         elif path == "/api/agents":
             self._json({"agents": AGENT_REGISTRY})
 
+        # ── Ontology (Karpathy minbpe-inspired typed hierarchy) ──
+        elif path == "/api/ontology":
+            self._json(_ontology.summary())
+
+        elif path.startswith("/api/ontology/department/"):
+            dept = path.split("/")[-1]
+            if dept in DEPARTMENT_ONTOLOGY:
+                self._json(_ontology.for_department(dept))
+            else:
+                self._json({"error": f"Unknown department: {dept}", "available": list(DEPARTMENT_ONTOLOGY.keys())}, 404)
+
+        # ── Pipeline analytics ──
+        elif path == "/api/reef/pipeline":
+            snap = build_snapshot()
+            self._json({
+                "schema_version": SCHEMA_VERSION,
+                "priorities": snap["priorities"],
+                "stats": snap["systemStatus"],
+            })
+
+        # ── Competitors ──
+        elif path == "/api/reef/competitors":
+            snap = build_snapshot()
+            self._json({
+                "schema_version": SCHEMA_VERSION,
+                "competitors": snap["competitors"],
+                "count": snap["systemStatus"]["competitorsTracked"],
+            })
+
+        # ── Analytics (cost tracking, nanochat-style explicit metrics) ──
+        elif path == "/api/reef/analytics":
+            cost_log = AUTO_DIR = OUTPUT_DIR / "auto_research" / "experiments.jsonl"
+            experiments = []
+            if cost_log.exists():
+                try:
+                    for line in cost_log.read_text().strip().split("\n"):
+                        if line.strip():
+                            experiments.append(json.loads(line))
+                except Exception:
+                    pass
+            self._json({
+                "schema_version": SCHEMA_VERSION,
+                "experiments": experiments[-50:],
+                "total_experiments": len(experiments),
+                "departments": list(DEPARTMENT_ONTOLOGY.keys()),
+            })
+
         # ── Job status ──
         elif path == "/api/reef/job":
             job_id = (qs.get("job_id") or [""])[0]
@@ -787,13 +981,14 @@ def main():
             pass
 
     print(f"\n{'='*55}")
-    print(f"  NEXUS PLATFORM SERVER v5")
-    print(f"  Schema: {SCHEMA_VERSION}")
+    print(f"  NEXUS PLATFORM SERVER v6")
+    print(f"  Schema: {SCHEMA_VERSION}  |  Ontology: {ONTOLOGY_VERSION}")
     print(f"{'='*55}")
     print(f"  UI:       http://localhost:{args.port}/reef")
     print(f"  Snapshot: http://localhost:{args.port}/api/reef/snapshot")
     print(f"  Research: http://localhost:{args.port}/api/reef/research")
     print(f"  Signals:  http://localhost:{args.port}/api/reef/signals")
+    print(f"  Ontology: http://localhost:{args.port}/api/ontology")
     print(f"  Events:   http://localhost:{args.port}/api/events")
     print(f"  Agents:   http://localhost:{args.port}/api/agents")
     print(f"  Health:   http://localhost:{args.port}/health")
@@ -802,7 +997,10 @@ def main():
     print(f"    Output dir:  {OUTPUT_DIR}")
     print(f"    Research KB: {kb_papers} papers")
     print(f"    War Room:    {graph_entities} entities")
+    print(f"    Ontology:    {len(_ontology.objects)} objects, {len(_ontology.links)} links")
     print(f"    JSX:         {jsx or 'NOT FOUND'}")
+    print(f"{'='*55}")
+    print(f"  Departments: {', '.join(DEPARTMENT_ONTOLOGY.keys())}")
     print(f"{'='*55}\n")
 
     if kb_papers == 0:
