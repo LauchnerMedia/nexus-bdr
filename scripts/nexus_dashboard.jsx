@@ -647,16 +647,20 @@ function NexusDashboard() {
   // Boot sequence
   useEffect(() => {
     let i = 0;
+    let cleared = false;
     const timer = setInterval(() => {
+      if (cleared) return;
       if (i < BOOT_LINES.length) {
-        setBootLines(prev => [...prev, BOOT_LINES[i]]);
+        const line = BOOT_LINES[i];
         i++;
+        if (line) setBootLines(prev => [...prev, line]);
       } else {
+        cleared = true;
         clearInterval(timer);
         setTimeout(() => setBooted(true), 500);
       }
     }, 180);
-    return () => clearInterval(timer);
+    return () => { cleared = true; clearInterval(timer); };
   }, []);
 
   // Fetch live data
@@ -705,7 +709,7 @@ function NexusDashboard() {
         <div style={{ fontSize:36, fontWeight:800, background:`linear-gradient(135deg, ${C.gold}, #e8c55a)`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", marginBottom:8, letterSpacing:6 }}>NEXUS</div>
         <div style={{ fontSize:13, color:C.dim, marginBottom:32, letterSpacing:2 }}>BDR INTELLIGENCE SYSTEM</div>
         <div style={{ maxWidth:640, width:"100%" }}>
-          {bootLines.map((line, i) => (
+          {bootLines.filter(Boolean).map((line, i) => (
             <div key={i} style={{ color:line.color, fontSize:13, padding:"3px 0", opacity:0, animation:"fadeIn 0.3s forwards", animationDelay:`${i*0.05}s` }}>
               <span style={{ color:C.muted, marginRight:8 }}>[{String(i).padStart(2,"0")}]</span>{line.text}
             </div>
