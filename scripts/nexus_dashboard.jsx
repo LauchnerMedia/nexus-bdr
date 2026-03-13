@@ -46,6 +46,7 @@ const DEMO_AGENTS = [
   { name:"Customer Intel", status:"standby", desc:"Churn, upsell, reactivation engine", file:"customer_intel.py", lines:629 },
   { name:"Terpene Research v2", status:"active", desc:"PubMed, patents, FDA — cumulative knowledge base", file:"terpene_research_v2.py", lines:869 },
   { name:"Master Orchestrator", status:"active", desc:"CLI entry point for entire system", file:"nexus.py", lines:543 },
+  { name:"Integration Hub", status:"active", desc:"30+ services across 6 tiers — enrichment, outreach, intel", file:"integration_hub.py", lines:1202 },
 ];
 
 const DEMO_PIPELINE = { total:138, hot:61, warm:32, cool:28, cold:17, companies:22, verified:37 };
@@ -535,6 +536,108 @@ function ResearchTab({ snapshot }) {
   );
 }
 
+// ─── TAB: INTEGRATIONS ───
+function IntegrationsTab({ snapshot }) {
+  const hub = snapshot?.integrationHub || { total:39, active:0, services:[], tiers:{} };
+  const outputs = snapshot?.integrationOutputs || { enrichments:0, competitive_scans:0, gmaps_discoveries:0, morning_briefings:0, recent_activity:[] };
+
+  const tierLabels = {
+    tier_1_revenue: { label:"REVENUE IMPACT", color:C.gold, icon:"$" },
+    tier_2_intelligence: { label:"INTELLIGENCE", color:C.cool, icon:"?" },
+    tier_3_communication: { label:"COMMUNICATION", color:C.green, icon:">" },
+    tier_4_analytics: { label:"ANALYTICS", color:C.warm, icon:"#" },
+    tier_5_ai_enhancement: { label:"AI ENHANCEMENT", color:"#a855f7", icon:"*" },
+    tier_6_data_enrichment: { label:"DATA ENRICHMENT", color:"#06b6d4", icon:"+" },
+  };
+
+  return (
+    <div style={{ padding:24, overflow:"auto", height:"100%" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+        <div>
+          <div style={{ color:C.gold, fontWeight:700, fontSize:16, fontFamily:FONT.display }}>INTEGRATION HUB</div>
+          <div style={{ color:C.dim, fontSize:12 }}>{hub.active}/{hub.total} services active · 6 tiers</div>
+        </div>
+        <div style={{ display:"flex", gap:8 }}>
+          <Badge color={C.green}>{hub.active} ACTIVE</Badge>
+          <Badge color={C.dim}>{hub.total - hub.active} INACTIVE</Badge>
+        </div>
+      </div>
+
+      {/* Stats Row */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:12, marginBottom:20 }}>
+        {[
+          { label:"Enrichments", value:outputs.enrichments, color:C.gold },
+          { label:"Competitive Scans", value:outputs.competitive_scans, color:C.cool },
+          { label:"Maps Discoveries", value:outputs.gmaps_discoveries, color:C.green },
+          { label:"Morning Briefings", value:outputs.morning_briefings, color:C.warm },
+        ].map(s => (
+          <div key={s.label} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, padding:16, textAlign:"center" }}>
+            <div style={{ fontSize:28, fontWeight:800, color:s.color, fontFamily:FONT.display }}>{s.value}</div>
+            <div style={{ fontSize:11, color:C.dim, marginTop:4 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tier Grid */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))", gap:12 }}>
+        {Object.entries(tierLabels).map(([tierKey, tierInfo]) => {
+          const tierData = hub.tiers[tierKey] || { active:0, total:0 };
+          const services = hub.services.filter(s => s.tier === tierKey);
+          return (
+            <div key={tierKey} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, padding:16 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <span style={{ width:24, height:24, borderRadius:6, background:`${tierInfo.color}20`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:800, color:tierInfo.color, fontFamily:FONT.display }}>{tierInfo.icon}</span>
+                  <span style={{ color:C.text, fontWeight:700, fontSize:13, fontFamily:FONT.display }}>{tierInfo.label}</span>
+                </div>
+                <span style={{ color:C.dim, fontSize:11 }}>{tierData.active}/{tierData.total}</span>
+              </div>
+              {services.map(svc => (
+                <div key={svc.name} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"5px 0", borderBottom:`1px solid ${C.border}20` }}>
+                  <div>
+                    <span style={{ fontSize:12, color: svc.active ? C.text : C.muted }}>{svc.name}</span>
+                    {svc.cost && <span style={{ fontSize:10, color:C.muted, marginLeft:8 }}>{svc.cost}</span>}
+                  </div>
+                  <span style={{ width:8, height:8, borderRadius:"50%", background: svc.active ? C.green : C.muted+"40", display:"inline-block" }} />
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Recent Activity */}
+      {outputs.recent_activity.length > 0 && (
+        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:12, padding:20, marginTop:20 }}>
+          <div style={{ color:C.gold, fontWeight:700, fontSize:13, fontFamily:FONT.display, marginBottom:12 }}>RECENT INTEGRATION ACTIVITY</div>
+          {outputs.recent_activity.slice(-10).reverse().map((a, i) => (
+            <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:`1px solid ${C.border}20` }}>
+              <div>
+                <span style={{ fontSize:12, color:C.text }}>{a.action}</span>
+                {a.company && <span style={{ fontSize:11, color:C.dim, marginLeft:8 }}>{a.company}</span>}
+              </div>
+              <span style={{ fontSize:10, color:C.muted, fontFamily:FONT.display }}>{a.timestamp?.slice(0, 16)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* CLI Reference */}
+      <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:12, padding:20, marginTop:20 }}>
+        <div style={{ color:C.gold, fontWeight:700, fontSize:13, fontFamily:FONT.display, marginBottom:12 }}>QUICK COMMANDS</div>
+        <pre style={{ color:C.dim, fontSize:11, fontFamily:FONT.display, lineHeight:1.8 }}>{`python3 scripts/nexus.py hub status              # Show active integrations
+python3 scripts/nexus.py hub enrich --domain X    # Deep-enrich company
+python3 scripts/nexus.py hub verify --domain X    # Email verification chain
+python3 scripts/nexus.py hub research --domain X  # Firecrawl website research
+python3 scripts/nexus.py hub competitive --domain X,Y  # Competitive scan
+python3 scripts/nexus.py hub gmaps --domain "query"    # Google Maps discovery
+python3 scripts/nexus.py hub morning              # Morning intel blast
+python3 scripts/integration_hub.py status         # Direct hub access`}</pre>
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN APP ───
 
 function NexusDashboard() {
@@ -615,7 +718,7 @@ function NexusDashboard() {
     );
   }
 
-  const TABS = ["DASHBOARD", "PIPELINE", "BUNDLES", "RESEARCH", "AGENTS"];
+  const TABS = ["DASHBOARD", "PIPELINE", "BUNDLES", "RESEARCH", "AGENTS", "INTEGRATIONS"];
 
   // ── Main Interface ──
   return (
@@ -662,6 +765,7 @@ function NexusDashboard() {
         {activeTab === "BUNDLES" && <BundlesTab />}
         {activeTab === "RESEARCH" && <ResearchTab snapshot={snapshot} />}
         {activeTab === "AGENTS" && <AgentsTab agents={DEMO_AGENTS} />}
+        {activeTab === "INTEGRATIONS" && <IntegrationsTab snapshot={snapshot} />}
       </div>
 
       <style>{`
