@@ -44,21 +44,80 @@ const AGENTS = [
   { name:"CSV Importer v2", status:"deployed", desc:"Apollo → normalized → scored pipeline", file:"csv_importer_v2.py", lines:420 },
   { name:"Enrichment Pipeline v2", status:"deployed", desc:"Hunter verification + data enrichment", file:"enrich_pipeline_v2.py", lines:560 },
   { name:"Master Orchestrator v7", status:"active", desc:"Single CLI entry point for entire system", file:"nexus.py", lines:480 },
+  { name:"LLM Council", status:"active", desc:"Karpathy-inspired multi-model consensus for high-stakes decisions", file:"llm_council.py", lines:234, karpathy:true },
+  { name:"AutoResearch", status:"active", desc:"Autonomous research loop — fixed budget, single metric, agent picks actions", file:"auto_research.py", lines:397, karpathy:true },
+  { name:"Agent Base", status:"active", desc:"minbpe-style agent hierarchy + micrograd composable scoring", file:"agent_base.py", lines:445, karpathy:true },
 ];
 
 const PIPELINE_STATS = { total:138, hot:61, warm:32, cool:28, cold:17, companies:22, verified:37, imported:133 };
 
 const SYSTEM_LINES = [
-  { text: "NEXUS BDR SYSTEM v5.0 — INITIALIZING", color: GOLD },
-  { text: "Loading agent fleet... 12 agents", color: TEXT },
+  { text: "NEXUS BDR SYSTEM v6.0 — INITIALIZING", color: GOLD },
+  { text: "Loading agent fleet... 15 agents (3 Karpathy-enhanced)", color: TEXT },
   { text: "Pipeline data: 138 contacts / 22 companies / 61 hot", color: GRN },
   { text: "Model Router: Anthropic ✅  OpenRouter ⚙️", color: TEXT },
+  { text: "Karpathy: LLM Council ✅  AutoResearch ✅  SignalScore ✅", color: COOL },
   { text: "Free Intel: Reddit ✅  FDA ✅  News ✅  SEC ✅", color: GRN },
   { text: "CRM Sync: GHL ✅  53 custom fields deployed", color: GRN },
   { text: "Briefs: 1 complete (Mellow Fellow) / 3 pending", color: WARM },
+  { text: "Agent Hierarchy: minbpe-style base → 4 specialized types", color: TEXT },
+  { text: "Depth Config: nanoGPT single-dial (1=fast → 4=premium)", color: WARM },
   { text: `CDT Market: ${PRICING.cdt_premium} | Botanical: ${PRICING.botanical_dft}`, color: GOLD },
-  { text: "Creative: HeyGen templates loaded / 4 video scripts ready", color: TEXT },
   { text: "SYSTEM ONLINE — All agents operational", color: GRN },
+];
+
+// ── Karpathy-inspired architecture data ──
+const KARPATHY_INSIGHTS = [
+  {
+    source: "karpathy/llm-council",
+    tool: "LLM Council",
+    pattern: "Multi-model consensus",
+    description: "3-stage deliberation: independent responses → anonymous peer review → chairman synthesis. Used for high-stakes BDR decisions (positioning, deal strategy, competitive plays).",
+    stages: ["Independent Responses", "Peer Review", "Chairman Synthesis"],
+    members: [
+      { id: "analyst", tier: "reasoning", focus: "Data, competitive dynamics, market positioning" },
+      { id: "strategist", tier: "premium", focus: "Relationship building, objection handling, deal velocity" },
+      { id: "researcher", tier: "research", focus: "Technical accuracy, regulatory compliance, product-market fit" },
+    ],
+  },
+  {
+    source: "karpathy/autoresearch",
+    tool: "AutoResearch",
+    pattern: "Autonomous agent loop",
+    description: "Fixed time/cost budget with single evaluation metric (pipeline_value_delta). Agent picks actions, evaluates results, iterates until budget exhausted.",
+    actions: ["signal_scan", "social_scan", "competitor_scan", "war_room_ingest", "war_room_decide", "research_harvest"],
+    metric: "pipeline_value_delta",
+  },
+  {
+    source: "karpathy/nanoGPT",
+    tool: "Depth Config",
+    pattern: "Single-dial configuration",
+    description: "One --depth parameter (1-4) controls model tier, max_tokens, and analysis passes. Like nanoGPT's single dial that computes width, heads, lr.",
+    depths: [
+      { level: 1, label: "fast", tier: "cheap", cost: "~$0.01" },
+      { level: 2, label: "balanced", tier: "research", cost: "~$0.05-0.15" },
+      { level: 3, label: "thorough", tier: "reasoning", cost: "~$0.15-0.50" },
+      { level: 4, label: "premium", tier: "premium", cost: "~$0.50-2.00" },
+    ],
+  },
+  {
+    source: "karpathy/micrograd",
+    tool: "SignalScore",
+    pattern: "Composable scoring with attribution",
+    description: "Like micrograd's Value class — scores chain with +, *, .decay() operations while tracking attribution. Transparent, explainable lead scoring.",
+    ops: ["+", "*", ".decay(days, half_life)", ".clamp(low, high)", ".attribution"],
+  },
+  {
+    source: "karpathy/minbpe",
+    tool: "Agent Base Classes",
+    pattern: "Clean inheritance hierarchy",
+    description: "Base Agent class with shared infra (output, logging, cost tracking). Specialized: ResearchAgent, IntelAgent, OutreachAgent, PipelineAgent.",
+    hierarchy: ["Agent (base)", "├── ResearchAgent", "├── IntelAgent", "├── OutreachAgent", "└── PipelineAgent"],
+  },
+];
+
+const COUNCIL_DECISIONS = [
+  "positioning", "deal_strategy", "outreach_angle", "competitive_play", "qualification", "risk_assessment",
 ];
 
 const TICKER_ITEMS = [
@@ -70,6 +129,9 @@ const TICKER_ITEMS = [
   { text: "OpenRouter integrated — brief cost: $0.15 vs $1.00 (85% savings)", color: GRN },
   { text: "Reddit monitoring: 14 subreddits / terpene + buying signals", color: COOL },
   { text: "HeyGen: 4 video templates ready — 1 recording → 50+ personalized videos", color: TEXT },
+  { text: "Karpathy patterns applied: LLM Council + AutoResearch + micrograd scoring + nanoGPT depth config", color: GOLD },
+  { text: "LLM Council: 3-stage multi-model consensus for high-stakes deal decisions", color: COOL },
+  { text: "AutoResearch: autonomous loop — $5 budget → signal scan + competitor intel + research harvest", color: GRN },
 ];
 
 // ── Chat logic ──
@@ -77,7 +139,19 @@ function processCommand(input, addMsg) {
   const cmd = input.trim().toLowerCase();
   
   if (cmd === "/help") {
-    return { type:"system", content:"**Commands:**\n/pipeline — Pipeline overview\n/company [name] — Company intel card\n/top [n] — Top prospects\n/agents — Agent fleet status\n/pricing — CDT vs botanical analysis\n/brief [company] — Brief status\n/coalition — Good Fellows opportunity\n/demo — System capabilities overview\n/status — System health" };
+    return { type:"system", content:"**Commands:**\n/pipeline — Pipeline overview\n/company [name] — Company intel card\n/top [n] — Top prospects\n/agents — Agent fleet status\n/pricing — CDT vs botanical analysis\n/brief [company] — Brief status\n/coalition — Good Fellows opportunity\n/council — LLM Council status (Karpathy)\n/autoresearch — AutoResearch loop status (Karpathy)\n/karpathy — All Karpathy architecture patterns\n/demo — System capabilities overview\n/status — System health" };
+  }
+
+  if (cmd === "/council") {
+    return { type:"council" };
+  }
+
+  if (cmd === "/autoresearch") {
+    return { type:"autoresearch" };
+  }
+
+  if (cmd === "/karpathy") {
+    return { type:"karpathy" };
   }
   
   if (cmd === "/pipeline") {
@@ -125,6 +199,11 @@ function processCommand(input, addMsg) {
   }
   if (cmd.includes("coalition") || cmd.includes("urb") || cmd.includes("zombi")) {
     return { type:"coalition" };
+  }
+  if (cmd.includes("karpathy") || cmd.includes("council") || cmd.includes("autoresearch")) {
+    if (cmd.includes("council") && !cmd.includes("karpathy")) return { type:"council" };
+    if (cmd.includes("autoresearch") && !cmd.includes("karpathy")) return { type:"autoresearch" };
+    return { type:"karpathy" };
   }
 
   return { type:"system", content: `Processing: "${input}"\n\nI can answer questions about the pipeline, companies, pricing, and system status. Try /help for commands, or ask naturally — "tell me about Mellow Fellow", "what's the CDT pricing", "show me the coalition opportunity".` };
@@ -255,6 +334,156 @@ function CoalitionCard() {
   );
 }
 
+// ── Karpathy Components ──
+function CouncilCard() {
+  const insight = KARPATHY_INSIGHTS[0];
+  return (
+    <div style={{ background:SURFACE, borderRadius:8, border:`1px solid ${COOL}40`, padding:16 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+        <div>
+          <div style={{ color:COOL, fontWeight:700, fontSize:14, fontFamily:"'JetBrains Mono',monospace" }}>LLM COUNCIL</div>
+          <div style={{ color:DIM, fontSize:11 }}>from {insight.source}</div>
+        </div>
+        <div style={{ background:`${GRN}20`, border:`1px solid ${GRN}40`, borderRadius:4, padding:"4px 10px", fontSize:11, color:GRN, fontWeight:600 }}>ACTIVE</div>
+      </div>
+      <div style={{ fontSize:12, color:TEXT, lineHeight:1.5, marginBottom:12 }}>{insight.description}</div>
+      <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+        {insight.stages.map((s, i) => (
+          <div key={s} style={{ flex:1, textAlign:"center", padding:"8px 4px", background:`${COOL}10`, border:`1px solid ${COOL}25`, borderRadius:6 }}>
+            <div style={{ fontSize:16, fontWeight:800, color:COOL, fontFamily:"'JetBrains Mono',monospace" }}>{i+1}</div>
+            <div style={{ fontSize:10, color:TEXT, marginTop:2 }}>{s}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize:11, color:GOLD, fontWeight:600, marginBottom:6 }}>COUNCIL MEMBERS</div>
+      {insight.members.map(m => (
+        <div key={m.id} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom:`1px solid ${BORDER}`, fontSize:12 }}>
+          <span style={{ color:TEXT, fontWeight:600, textTransform:"capitalize" }}>{m.id}</span>
+          <span style={{ color:DIM }}>{m.tier} — {m.focus}</span>
+        </div>
+      ))}
+      <div style={{ marginTop:10, fontSize:11, color:DIM }}>
+        <span style={{ color:GOLD, fontWeight:600 }}>Decisions: </span>{COUNCIL_DECISIONS.join(" · ")}
+      </div>
+    </div>
+  );
+}
+
+function AutoResearchCard() {
+  const insight = KARPATHY_INSIGHTS[1];
+  return (
+    <div style={{ background:SURFACE, borderRadius:8, border:`1px solid ${GRN}40`, padding:16 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+        <div>
+          <div style={{ color:GRN, fontWeight:700, fontSize:14, fontFamily:"'JetBrains Mono',monospace" }}>AUTORESEARCH LOOP</div>
+          <div style={{ color:DIM, fontSize:11 }}>from {insight.source}</div>
+        </div>
+        <div style={{ background:`${GRN}20`, border:`1px solid ${GRN}40`, borderRadius:4, padding:"4px 10px", fontSize:11, color:GRN, fontWeight:600 }}>ACTIVE</div>
+      </div>
+      <div style={{ fontSize:12, color:TEXT, lineHeight:1.5, marginBottom:12 }}>{insight.description}</div>
+      <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+        <div style={{ flex:1, textAlign:"center", padding:10, background:`${GRN}10`, borderRadius:6, border:`1px solid ${GRN}25` }}>
+          <div style={{ fontSize:20, fontWeight:800, color:GRN, fontFamily:"'JetBrains Mono',monospace" }}>60m</div>
+          <div style={{ fontSize:10, color:DIM }}>DEFAULT BUDGET</div>
+        </div>
+        <div style={{ flex:1, textAlign:"center", padding:10, background:`${GOLD}10`, borderRadius:6, border:`1px solid ${GOLD}25` }}>
+          <div style={{ fontSize:20, fontWeight:800, color:GOLD, fontFamily:"'JetBrains Mono',monospace" }}>$5.00</div>
+          <div style={{ fontSize:10, color:DIM }}>MAX COST</div>
+        </div>
+        <div style={{ flex:1, textAlign:"center", padding:10, background:`${COOL}10`, borderRadius:6, border:`1px solid ${COOL}25` }}>
+          <div style={{ fontSize:20, fontWeight:800, color:COOL, fontFamily:"'JetBrains Mono',monospace" }}>6</div>
+          <div style={{ fontSize:10, color:DIM }}>ACTIONS</div>
+        </div>
+      </div>
+      <div style={{ fontSize:11, color:GOLD, fontWeight:600, marginBottom:6 }}>AUTONOMOUS ACTIONS</div>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:4 }}>
+        {insight.actions.map(a => (
+          <div key={a} style={{ fontSize:11, color:TEXT, padding:"4px 8px", background:`${BORDER}50`, borderRadius:4, fontFamily:"'JetBrains Mono',monospace" }}>{a}</div>
+        ))}
+      </div>
+      <div style={{ marginTop:10, padding:8, background:`${GRN}08`, borderRadius:4, border:`1px solid ${GRN}20`, fontSize:11, color:DIM }}>
+        <span style={{ color:GRN, fontWeight:600 }}>Metric: </span>pipeline_value_delta — signals×1 + enriched×5 + briefs×10 + pipeline×0.001
+      </div>
+    </div>
+  );
+}
+
+function DepthConfigCard() {
+  const insight = KARPATHY_INSIGHTS[2];
+  return (
+    <div style={{ background:SURFACE, borderRadius:8, border:`1px solid ${WARM}40`, padding:16 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+        <div>
+          <div style={{ color:WARM, fontWeight:700, fontSize:14, fontFamily:"'JetBrains Mono',monospace" }}>NANOGPT DEPTH CONFIG</div>
+          <div style={{ color:DIM, fontSize:11 }}>from {insight.source}</div>
+        </div>
+      </div>
+      <div style={{ fontSize:12, color:TEXT, lineHeight:1.5, marginBottom:12 }}>{insight.description}</div>
+      {insight.depths.map(d => {
+        const barColor = d.level === 1 ? DIM : d.level === 2 ? COOL : d.level === 3 ? WARM : GOLD;
+        return (
+          <div key={d.level} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:`1px solid ${BORDER}` }}>
+            <div style={{ width:28, height:28, borderRadius:6, background:`${barColor}20`, border:`1px solid ${barColor}40`, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, fontSize:14, color:barColor, fontFamily:"'JetBrains Mono',monospace" }}>{d.level}</div>
+            <div style={{ flex:1 }}>
+              <span style={{ color:TEXT, fontWeight:600, fontSize:12 }}>{d.label}</span>
+              <span style={{ color:DIM, fontSize:11, marginLeft:8 }}>{d.tier}</span>
+            </div>
+            <span style={{ color:barColor, fontSize:12, fontFamily:"'JetBrains Mono',monospace" }}>{d.cost}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SignalScoreCard() {
+  const insight = KARPATHY_INSIGHTS[3];
+  return (
+    <div style={{ background:SURFACE, borderRadius:8, border:`1px solid ${HOT}40`, padding:16 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+        <div>
+          <div style={{ color:HOT, fontWeight:700, fontSize:14, fontFamily:"'JetBrains Mono',monospace" }}>MICROGRAD SIGNALSCORE</div>
+          <div style={{ color:DIM, fontSize:11 }}>from {insight.source}</div>
+        </div>
+      </div>
+      <div style={{ fontSize:12, color:TEXT, lineHeight:1.5, marginBottom:12 }}>{insight.description}</div>
+      <div style={{ background:VOID, borderRadius:6, padding:12, fontFamily:"'JetBrains Mono',monospace", fontSize:11, lineHeight:1.8, color:TEXT }}>
+        <div><span style={{color:COOL}}>score</span> = SignalScore(<span style={{color:GRN}}>0.7</span>, <span style={{color:WARM}}>"base"</span>)</div>
+        <div><span style={{color:COOL}}>score</span> = score <span style={{color:HOT}}>*</span> SignalScore(<span style={{color:GRN}}>0.9</span>, <span style={{color:WARM}}>"reliability"</span>)</div>
+        <div><span style={{color:COOL}}>score</span> = score <span style={{color:HOT}}>+</span> SignalScore(<span style={{color:GRN}}>0.3</span>, <span style={{color:WARM}}>"hiring_signal"</span>)</div>
+        <div><span style={{color:COOL}}>score</span> = score.<span style={{color:GOLD}}>decay</span>(days=<span style={{color:GRN}}>7</span>, half_life=<span style={{color:GRN}}>14</span>)</div>
+        <div style={{color:DIM,marginTop:4}}>→ score.value = <span style={{color:GRN}}>0.7395</span></div>
+        <div style={{color:DIM}}>→ score.attribution = <span style={{color:GOLD}}>{"{"}"base": 0.63, "hiring": 0.3{"}"}</span></div>
+      </div>
+      <div style={{ marginTop:8, display:"flex", gap:4, flexWrap:"wrap" }}>
+        {insight.ops.map(op => (
+          <span key={op} style={{ fontSize:10, color:HOT, padding:"2px 8px", background:`${HOT}10`, borderRadius:4, fontFamily:"'JetBrains Mono',monospace", border:`1px solid ${HOT}25` }}>{op}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AgentHierarchyCard() {
+  const insight = KARPATHY_INSIGHTS[4];
+  return (
+    <div style={{ background:SURFACE, borderRadius:8, border:`1px solid ${GOLD}40`, padding:16 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+        <div>
+          <div style={{ color:GOLD, fontWeight:700, fontSize:14, fontFamily:"'JetBrains Mono',monospace" }}>MINBPE AGENT HIERARCHY</div>
+          <div style={{ color:DIM, fontSize:11 }}>from {insight.source}</div>
+        </div>
+      </div>
+      <div style={{ fontSize:12, color:TEXT, lineHeight:1.5, marginBottom:12 }}>{insight.description}</div>
+      <div style={{ background:VOID, borderRadius:6, padding:12, fontFamily:"'JetBrains Mono',monospace", fontSize:12, lineHeight:1.8 }}>
+        {insight.hierarchy.map((line, i) => (
+          <div key={i} style={{ color: i === 0 ? GOLD : TEXT }}>{line}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Main App ──
 export default function NexusV5() {
   const [booted, setBooted] = useState(false);
@@ -280,7 +509,7 @@ export default function NexusV5() {
           setMessages([{
             role: "assistant",
             type: "system",
-            content: "Nexus BDR System online. 12 agents operational. 138 contacts in pipeline. Mellow Fellow brief complete.\n\nType /help for commands, or ask naturally — \"show me the pipeline\", \"tell me about Mellow Fellow\", \"what's the CDT pricing\"."
+            content: "Nexus BDR System v6.0 online. 15 agents operational (3 Karpathy-enhanced). 138 contacts in pipeline.\n\nNew: /council — LLM multi-model consensus | /autoresearch — autonomous research loop | /karpathy — all patterns\n\nType /help for all commands, or ask naturally."
           }]);
         }, 600);
       }
@@ -350,10 +579,10 @@ export default function NexusV5() {
       <div style={{ padding:"12px 24px", display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:`1px solid ${BORDER}` }}>
         <div style={{ display:"flex", alignItems:"center", gap:16 }}>
           <span style={{ fontSize:20, fontWeight:800, background:`linear-gradient(135deg, ${GOLD}, #e8c55a)`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", letterSpacing:3, fontFamily:"'JetBrains Mono',monospace" }}>NEXUS</span>
-          <span style={{ color:DIM, fontSize:12 }}>BDR Intelligence System v5.0</span>
+          <span style={{ color:DIM, fontSize:12 }}>BDR Intelligence System v6.0 — Karpathy Enhanced</span>
         </div>
         <div style={{ display:"flex", gap:4 }}>
-          {["COMMAND","AGENTS","INTEL","PRICING"].map(v => (
+          {["COMMAND","AGENTS","INTEL","PRICING","KARPATHY"].map(v => (
             <button key={v} onClick={() => setView(v)} style={{
               background: view === v ? GOLD : "transparent",
               color: view === v ? VOID : DIM,
@@ -404,6 +633,17 @@ export default function NexusV5() {
                         ))}
                       </div>
                     )}
+                    {msg.type === "council" && <CouncilCard />}
+                    {msg.type === "autoresearch" && <AutoResearchCard />}
+                    {msg.type === "karpathy" && (
+                      <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                        <CouncilCard />
+                        <AutoResearchCard />
+                        <DepthConfigCard />
+                        <SignalScoreCard />
+                        <AgentHierarchyCard />
+                      </div>
+                    )}
                     {(msg.type === "system" || msg.type === "demo" || msg.type === "status") && (
                       <div style={{ background:SURFACE, borderRadius:8, border:`1px solid ${BORDER}`, padding:"12px 16px", fontSize:13, color:TEXT, lineHeight:1.6, whiteSpace:"pre-wrap" }}>{msg.content}</div>
                     )}
@@ -435,12 +675,15 @@ export default function NexusV5() {
         {/* Agents View */}
         {view === "AGENTS" && (
           <div style={{ flex:1, overflow:"auto", padding:24 }}>
-            <h2 style={{ color:GOLD, fontSize:18, fontWeight:700, marginBottom:16, fontFamily:"'JetBrains Mono',monospace" }}>AGENT FLEET — {AGENTS.length} AGENTS / {AGENTS.reduce((s,a) => s+a.lines, 0).toLocaleString()} LINES</h2>
+            <h2 style={{ color:GOLD, fontSize:18, fontWeight:700, marginBottom:16, fontFamily:"'JetBrains Mono',monospace" }}>AGENT FLEET — {AGENTS.length} AGENTS / {AGENTS.reduce((s,a) => s+a.lines, 0).toLocaleString()} LINES ({AGENTS.filter(a => a.karpathy).length} KARPATHY)</h2>
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(300px, 1fr))", gap:12 }}>
               {AGENTS.map(a => (
-                <div key={a.name} style={{ background:SURFACE, borderRadius:8, border:`1px solid ${BORDER}`, padding:16 }}>
+                <div key={a.name} style={{ background:SURFACE, borderRadius:8, border:`1px solid ${a.karpathy ? COOL : BORDER}`, padding:16 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-                    <span style={{ color:TEXT, fontWeight:700, fontSize:14 }}>{a.name}</span>
+                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                      <span style={{ color:TEXT, fontWeight:700, fontSize:14 }}>{a.name}</span>
+                      {a.karpathy && <span style={{ fontSize:9, color:COOL, background:`${COOL}15`, padding:"2px 6px", borderRadius:3, fontFamily:"'JetBrains Mono',monospace", fontWeight:700 }}>KARPATHY</span>}
+                    </div>
                     <span style={{ color:a.status==="active"?GRN:a.status==="deployed"?COOL:a.status==="ready"?WARM:DIM, fontSize:11, fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase" }}>{a.status}</span>
                   </div>
                   <div style={{ color:DIM, fontSize:12, marginBottom:8, lineHeight:1.4 }}>{a.desc}</div>
@@ -460,6 +703,39 @@ export default function NexusV5() {
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))", gap:12 }}>
                 {COMPANIES.map(c => <CompanyCard key={c.name} data={c} />)}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Karpathy View */}
+        {view === "KARPATHY" && (
+          <div style={{ flex:1, overflow:"auto", padding:24 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+              <div>
+                <h2 style={{ color:GOLD, fontSize:18, fontWeight:700, margin:0, fontFamily:"'JetBrains Mono',monospace" }}>KARPATHY ARCHITECTURE PATTERNS</h2>
+                <div style={{ color:DIM, fontSize:12, marginTop:4 }}>5 patterns from Andrej Karpathy's repos applied to BDR intelligence</div>
+              </div>
+              <div style={{ display:"flex", gap:8 }}>
+                <div style={{ background:`${GRN}15`, border:`1px solid ${GRN}30`, borderRadius:6, padding:"6px 12px", textAlign:"center" }}>
+                  <div style={{ fontSize:16, fontWeight:800, color:GRN, fontFamily:"'JetBrains Mono',monospace" }}>5</div>
+                  <div style={{ fontSize:9, color:DIM }}>PATTERNS</div>
+                </div>
+                <div style={{ background:`${COOL}15`, border:`1px solid ${COOL}30`, borderRadius:6, padding:"6px 12px", textAlign:"center" }}>
+                  <div style={{ fontSize:16, fontWeight:800, color:COOL, fontFamily:"'JetBrains Mono',monospace" }}>3</div>
+                  <div style={{ fontSize:9, color:DIM }}>NEW TOOLS</div>
+                </div>
+                <div style={{ background:`${GOLD}15`, border:`1px solid ${GOLD}30`, borderRadius:6, padding:"6px 12px", textAlign:"center" }}>
+                  <div style={{ fontSize:16, fontWeight:800, color:GOLD, fontFamily:"'JetBrains Mono',monospace" }}>1,076</div>
+                  <div style={{ fontSize:9, color:DIM }}>LINES</div>
+                </div>
+              </div>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+              <CouncilCard />
+              <AutoResearchCard />
+              <DepthConfigCard />
+              <SignalScoreCard />
+              <div style={{ gridColumn:"1 / -1" }}><AgentHierarchyCard /></div>
             </div>
           </div>
         )}
