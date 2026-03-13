@@ -16,6 +16,13 @@ const C = {
 
 const FONT = { display: "'JetBrains Mono', monospace", body: "'Outfit', sans-serif" };
 
+// ─── BRAND CONFIG ───
+const BRANDS = {
+  ALL: { label:"NEXUS", sublabel:"All Brands", color:C.gold, accent:C.gold },
+  TBF: { label:"TBF", sublabel:"Terpene Belt Farms", color:"#2D5016", accent:"#4a8a2a", desc:"Premium · Science-backed · Enterprise", site:"terpenebeltfarms.com" },
+  DFT: { label:"DFT", sublabel:"Duty Free Terpenes", color:"#cc2222", accent:C.dft, desc:"Rebellious · No minimums · Creator-to-creator", site:"dutyfreetrps.com" },
+};
+
 // ─── DEMO DATA (fallback when API unavailable) ───
 const DEMO_COMPANIES = [
   { name:"Mellow Fellow", contacts:25, score:96, brand:"DFT", region:"FL", domain:"mellowfellow.fun", topPerson:"JJ Coombs (PharmD)", topTitle:"CEO", emails:3, products:"Vapes · Edibles · THCa · Beverages", intel:"#1 target. Pharmacist-founded. Self-extracts CDT at Arvida Labs. 40+ states. 3.0/5 Trustpilot = quality issues. Federal THC ban = existential threat. Good Fellows coalition (Urb, Zombi, Pushin P's) = 4 accounts.", briefStatus:"complete", tier:"hot", currentSupplier:"True Terpenes" },
@@ -642,6 +649,7 @@ function NexusDashboard() {
   const [booted, setBooted] = useState(false);
   const [bootLines, setBootLines] = useState([]);
   const [activeTab, setActiveTab] = useState("DASHBOARD");
+  const [activeBrand, setActiveBrand] = useState("ALL");
   const [snapshot, setSnapshot] = useState(null);
 
   // Boot sequence
@@ -675,7 +683,7 @@ function NexusDashboard() {
   }, [booted]);
 
   // Derive data from snapshot or fall back to demo
-  const companies = useMemo(() => {
+  const allCompanies = useMemo(() => {
     if (snapshot?.priorities?.length > 0) {
       return snapshot.priorities.map(p => ({
         name: p.company, domain: p.domain, score: p.score, tier: p.tier,
@@ -688,6 +696,11 @@ function NexusDashboard() {
     }
     return DEMO_COMPANIES;
   }, [snapshot]);
+
+  const companies = useMemo(() => {
+    if (activeBrand === "ALL") return allCompanies;
+    return allCompanies.filter(c => c.brand === activeBrand);
+  }, [allCompanies, activeBrand]);
 
   const competitors = useMemo(() => {
     if (snapshot?.competitors?.length > 0) return snapshot.competitors;
@@ -742,8 +755,8 @@ function NexusDashboard() {
       {/* Header */}
       <div style={{ padding:"10px 24px", display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:`1px solid ${C.border}`, background:C.void }}>
         <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-          <span style={{ fontSize:22, fontWeight:800, background:`linear-gradient(135deg, ${C.gold}, #e8c55a)`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", letterSpacing:4, fontFamily:FONT.display }}>NEXUS</span>
-          <span style={{ color:C.dim, fontSize:12, letterSpacing:1 }}>BDR Intelligence System v5.0</span>
+          <span style={{ fontSize:22, fontWeight:800, background:`linear-gradient(135deg, ${BRANDS[activeBrand].accent}, ${activeBrand === "ALL" ? "#e8c55a" : BRANDS[activeBrand].color})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", letterSpacing:4, fontFamily:FONT.display }}>{activeBrand === "ALL" ? "NEXUS" : BRANDS[activeBrand].label}</span>
+          <span style={{ color:C.dim, fontSize:12, letterSpacing:1 }}>{activeBrand === "ALL" ? "BDR Intelligence System v5.0" : BRANDS[activeBrand].sublabel}</span>
           {snapshot && <Badge color={C.green}>LIVE</Badge>}
           {!snapshot && <Badge color={C.warm}>DEMO</Badge>}
         </div>
@@ -760,8 +773,27 @@ function NexusDashboard() {
         </div>
       </div>
 
+      {/* Brand Selector */}
+      <div style={{ padding:"8px 24px", display:"flex", alignItems:"center", gap:6, borderBottom:`1px solid ${C.border}`, background:C.void }}>
+        <span style={{ color:C.dim, fontSize:10, fontFamily:FONT.display, marginRight:8, letterSpacing:1 }}>BRAND:</span>
+        {Object.entries(BRANDS).map(([key, b]) => (
+          <button key={key} onClick={() => setActiveBrand(key)} style={{
+            background: activeBrand === key ? (b.accent || b.color) : "transparent",
+            color: activeBrand === key ? "#fff" : C.dim,
+            border:`1px solid ${activeBrand === key ? (b.accent || b.color) : C.border}`,
+            padding:"5px 14px", borderRadius:5, fontSize:11, fontWeight:700,
+            cursor:"pointer", fontFamily:FONT.display, letterSpacing:1, transition:"all 0.2s"
+          }}>{b.label}</button>
+        ))}
+        {activeBrand !== "ALL" && (
+          <span style={{ marginLeft:12, fontSize:11, color:BRANDS[activeBrand].accent, fontFamily:FONT.body }}>
+            {BRANDS[activeBrand].sublabel} <span style={{ color:C.dim }}>— {BRANDS[activeBrand].desc}</span>
+          </span>
+        )}
+      </div>
+
       {/* Content */}
-      <div style={{ height:"calc(100vh - 70px)", overflow:"hidden" }}>
+      <div style={{ height:"calc(100vh - 110px)", overflow:"hidden" }}>
         {activeTab === "DASHBOARD" && <DashboardTab companies={companies} pipeline={pipeline} competitors={competitors} snapshot={snapshot} />}
         {activeTab === "PIPELINE" && <PipelineTab companies={companies} />}
         {activeTab === "BUNDLES" && <BundlesTab />}
