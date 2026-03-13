@@ -116,6 +116,17 @@ class KnowledgeGraph:
                     "quality_complaint_about_competitor": 12,
                     "brief_completed": 3,
                     "email_verified": 2,
+                    # Integration Hub signals
+                    "clearbit_enrichment": 4,
+                    "competitive_scan": 5,
+                    "outreach_analytics": 3,
+                    "gmaps_discovery": 3,
+                    "firecrawl_research": 4,
+                    "sentiment_negative_competitor": 11,
+                    "high_intent_social": 13,
+                    "outreach_reply": 15,
+                    "calendly_meeting_booked": 18,
+                    "stripe_payment_received": 20,
                 },
                 "outcome_history": [],  # win/loss records for pattern learning
                 "messaging_effectiveness": {},  # which subjects/angles get replies
@@ -327,6 +338,9 @@ def ingest_all(graph):
 
     # 6. Trigger alerts
     _ingest_alerts(graph)
+
+    # 7. Integration Hub data (enrichments, competitive scans, outreach stats)
+    _ingest_integration_hub(graph)
 
     graph.data["metadata"]["last_ingest"] = datetime.utcnow().isoformat()
     graph.data["metadata"]["ingest_count"] = graph.data["metadata"].get("ingest_count", 0) + 1
@@ -638,6 +652,116 @@ def _ingest_alerts(graph):
             continue
 
     print(f"  └─ ✅ {count} alerts ingested")
+
+
+def _ingest_integration_hub(graph):
+    """Ingest data from the Integration Hub (enrichments, competitive scans, outreach analytics)."""
+    print(f"  ┌─ Integration Hub Data")
+    hub_dir = OUTPUT_DIR / "integrations"
+    if not hub_dir.exists():
+        print(f"  └─ No integration data yet (run: python3 nexus.py hub status)")
+        return
+
+    count = 0
+
+    # 1. Enrichment data (Clearbit, Firecrawl research results)
+    for enriched_file in sorted(hub_dir.glob("enriched_*.json"), key=lambda p: p.stat().st_mtime, reverse=True)[:10]:
+        try:
+            with open(enriched_file) as f:
+                data = json.load(f)
+            lead = data.get("lead", {})
+            enrichments = data.get("enrichments", {})
+            company = lead.get("company_name") or lead.get("domain", "unknown")
+            entity_key = graph.add_entity("company", company.lower().replace(" ", "_"), {
+                "name": company,
+                "domain": lead.get("domain"),
+                "clearbit_data": enrichments.get("clearbit_company", {}),
+                "website_research": {k: v[:500] if isinstance(v, str) else v
+                                     for k, v in enrichments.get("website_research", {}).get("pages", {}).items()},
+                "digital_footprint": enrichments.get("digital_footprint", {}),
+                "enrichment_source": "integration_hub",
+                "enriched_at": data.get("enriched_at"),
+            })
+            # Add enrichment signal
+            clearbit = enrichments.get("clearbit_company", {})
+            if clearbit and "error" not in clearbit:
+                graph.add_signal("clearbit_enrichment", "integration_hub", [entity_key], {
+                    "employee_count": clearbit.get("employee_count"),
+                    "industry": clearbit.get("industry"),
+                    "revenue": clearbit.get("estimated_annual_revenue"),
+                    "tech_stack_count": len(clearbit.get("tech_stack", [])),
+                }, strength=4)
+                count += 1
+            # Email verification signal
+            email_verif = enrichments.get("email_verification", {})
+            if email_verif.get("final_status") == "valid":
+                graph.add_signal("email_verified", "integration_hub", [entity_key], {
+                    "email": lead.get("email"),
+                    "verified_by": email_verif.get("verified_by"),
+                }, strength=3)
+                count += 1
+        except Exception:
+            continue
+
+    # 2. Competitive scan data
+    for scan_file in sorted(hub_dir.glob("competitive_scan_*.json"), key=lambda p: p.stat().st_mtime, reverse=True)[:5]:
+        try:
+            with open(scan_file) as f:
+                scans = json.load(f)
+            for scan in scans:
+                domain = scan.get("domain", "")
+                entity_key = graph.add_entity("competitor", domain, {
+                    "domain": domain,
+                    "digital_analysis": scan.get("digital", {}),
+                    "scan_source": "integration_hub",
+                })
+                graph.add_signal("competitive_scan", "integration_hub", [entity_key], {
+                    "domain": domain,
+                    "scanned_at": scan.get("digital", {}).get("analyzed_at"),
+                }, strength=5)
+                count += 1
+        except Exception:
+            continue
+
+    # 3. Google Maps discovery data
+    for gmaps_file in sorted(hub_dir.glob("gmaps_leads_*.json"), key=lambda p: p.stat().st_mtime, reverse=True)[:5]:
+        try:
+            with open(gmaps_file) as f:
+                leads = json.load(f)
+            for lead in leads:
+                company = lead.get("company_name", "")
+                if company:
+                    entity_key = graph.add_entity("company", company.lower().replace(" ", "_"), {
+                        "name": company,
+                        "domain": lead.get("domain"),
+                        "phone": lead.get("phone"),
+                        "address": lead.get("address"),
+                        "google_rating": lead.get("rating"),
+                        "reviews_count": lead.get("reviews_count"),
+                        "category": lead.get("category"),
+                        "source": "google_maps",
+                    })
+                    count += 1
+        except Exception:
+            continue
+
+    # 4. Morning briefing / outreach analytics
+    for briefing_file in sorted(hub_dir.glob("morning_briefing_*.json"), key=lambda p: p.stat().st_mtime, reverse=True)[:3]:
+        try:
+            with open(briefing_file) as f:
+                briefing = json.load(f)
+            if briefing.get("campaign_stats"):
+                graph.add_signal("outreach_analytics", "integration_hub", [], {
+                    "date": briefing.get("date"),
+                    "revenue_30d": briefing.get("revenue_last_30d"),
+                    "hot_count": briefing.get("hot_count"),
+                    "campaigns": len(briefing.get("campaign_stats", {})),
+                }, strength=3)
+                count += 1
+        except Exception:
+            continue
+
+    print(f"  └─ ✅ {count} integration signals ingested")
 
 
 # ═══════════════════════════════════════════════════════════

@@ -1,7 +1,7 @@
 # NEXUS BDR — Agentic Sales Intelligence System
 ### Built for Terpene Belt Farms / Duty Free Terpenes
 
-**18 scripts | 12,281 lines | 15 agents | Zero idle data**
+**19 scripts | 13,400+ lines | 15 agents | 30+ integrations | Zero idle data**
 
 ---
 
@@ -19,16 +19,44 @@
 │  40+ connections  Reddit + Research  Pattern recognition      │
 └──────────────────────┬───────────────────────────────────────┘
                        │
-        ┌──────────────┼──────────────┐
-        │              │              │
-   INTELLIGENCE    PIPELINE       OUTPUT
-        │              │              │
-   Brief Engine    Apollo Import   HeyGen Scripts
-   Competitor Vuln CSV → Score     GHL Workflows
-   Terpene Research Hunter Verify  Daily Briefings
-   Reddit Intel    CRM Sync       Word Docs
-   Trigger Monitor                 Reports
-   Free Intel
+        ┌──────────────┼──────────────┬──────────────┐
+        │              │              │              │
+   INTELLIGENCE    PIPELINE       OUTPUT       INTEGRATION HUB
+        │              │              │              │
+   Brief Engine    Apollo Import   HeyGen Scripts  Clearbit Enrich
+   Competitor Vuln CSV → Score     GHL Workflows   Email Chain (4x)
+   Terpene Research Hunter Verify  Daily Briefings Instantly/lemlist
+   Reddit Intel    CRM Sync       Word Docs       Firecrawl Research
+   Trigger Monitor                 Reports         Apify Scraping
+   Free Intel                                      Slack/Telegram/Discord
+                                                   Stripe Revenue
+                                                   Klaviyo Marketing
+                                                   Calendly Scheduling
+                                                   HuggingFace ML
+                                                   Google Maps Discovery
+                                                   Pinecone Vector DB
+```
+
+### Integration Hub (integration_hub.py — 30+ services)
+
+```
+TIER 1: REVENUE IMPACT          TIER 2: INTELLIGENCE         TIER 3: COMMUNICATION
+─────────────────────           ────────────────────         ─────────────────────
+Clearbit (firmographics)         Firecrawl (AI web crawl)     Slack (team alerts)
+Hunter → Findymail → ZeroBounce Apify (LinkedIn/Maps/IG)     Telegram (mobile alerts)
+  → Tomba (email chain)         SimilarWeb (traffic data)    Discord (community)
+Instantly (cold email)           Ahrefs (SEO intel)           Twilio (SMS/Voice)
+lemlist (multi-channel)          Pinecone (vector search)     SendGrid (email delivery)
+Calendly (scheduling)            Google Sheets (export)
+HubSpot + GHL (dual CRM)
+
+TIER 4: ANALYTICS               TIER 5: AI ENHANCEMENT       TIER 6: DATA ENRICHMENT
+─────────────────               ──────────────────────       ───────────────────────
+Stripe (revenue tracking)       HuggingFace (sentiment/NLI)  Lusha (contact data)
+Klaviyo (marketing auto)        Deepgram (call transcription) ContactOut (LinkedIn)
+PostHog (product analytics)     Leonardo AI (image gen)       Tomba (email finder)
+Metabase (BI dashboards)        Replicate (ML models)         LinkupAPI (LinkedIn data)
+                                                              Google Maps (Places API)
 ```
 
 ---
@@ -56,12 +84,13 @@ python3 scripts/nexus.py status
 
 ## File Reference
 
-### CORE SYSTEM (3 files)
+### CORE SYSTEM (4 files)
 | File | Lines | Description |
 |------|-------|-------------|
-| `war_room.py` | 1,067 | Central nervous system. Knowledge graph + decision engine + learning |
-| `nexus.py` | 543 | Master CLI orchestrator. Single entry point for all commands |
+| `war_room.py` | 1,167 | Central nervous system. Knowledge graph + decision engine + learning |
+| `nexus.py` | 643 | Master CLI orchestrator. Single entry point for all commands |
 | `model_router.py` | 401 | Anthropic ↔ OpenRouter cost optimization. Saves ~40-60% per brief |
+| `integration_hub.py` | 1,202 | Master integration orchestrator. 30+ services across 6 tiers. Clearbit, Hunter chain, Instantly, Firecrawl, Apify, Slack, Stripe, Klaviyo, Pinecone, HuggingFace, and more |
 
 ### INTELLIGENCE AGENTS (6 files)
 | File | Lines | Description |
@@ -154,6 +183,41 @@ python3 scripts/enrich_pipeline_v2.py --input scored.json --verify
 python3 scripts/ghl_sync_v2.py --input enriched.json --push
 ```
 
+### Integration Hub (30+ services)
+```bash
+# Status — see which integrations are active
+python3 scripts/integration_hub.py status
+python3 scripts/nexus.py hub status
+
+# Deep enrichment (Clearbit + email chain + Firecrawl + competitive)
+python3 scripts/integration_hub.py enrich mellowfellow.fun
+python3 scripts/nexus.py hub enrich --domain mellowfellow.fun
+
+# Email verification chain (Hunter → Findymail → ZeroBounce → Tomba)
+python3 scripts/integration_hub.py verify john@example.com
+
+# Website research (Firecrawl AI crawl)
+python3 scripts/integration_hub.py research mellowfellow.fun
+
+# Competitive intelligence scan
+python3 scripts/integration_hub.py competitive trueterpenes.com,abstractat.com
+
+# Google Maps lead discovery
+python3 scripts/integration_hub.py gmaps "cannabis extraction company California"
+
+# Broadcast notification to Slack/Telegram/Discord
+python3 scripts/integration_hub.py notify "Hot lead detected: Mellow Fellow score 92"
+
+# Morning intelligence blast (campaigns + revenue + briefing)
+python3 scripts/integration_hub.py morning
+
+# Outreach campaign analytics (Instantly/lemlist)
+python3 scripts/integration_hub.py campaigns
+
+# Revenue tracking (Stripe)
+python3 scripts/integration_hub.py revenue john@cookies.com
+```
+
 ---
 
 ## Output Directories
@@ -172,6 +236,7 @@ outputs/
 │   ├── learning/              # Outcome tracking + weight adjustments
 │   └── history/               # Decision history
 ├── alerts/                    # Trigger monitor alerts
+├── integrations/              # Integration Hub outputs (enrichments, scans, briefings)
 ├── scored_apollo_*.json       # Scored pipeline data
 └── mellow_fellow_brief.docx   # Example deliverable
 ```
@@ -180,6 +245,7 @@ outputs/
 
 ## API Keys & Costs
 
+### Core System
 | Key | Required | Used By | Cost |
 |-----|----------|---------|------|
 | `ANTHROPIC_API_KEY` | Yes | Brief engine (phases 1-4, 6), synthesis | ~$0.40/brief |
@@ -187,6 +253,39 @@ outputs/
 | `HUNTER_API_KEY` | For enrichment | Email verification | Free tier: 25/mo |
 | `GHL_API_KEY` | For CRM sync | GoHighLevel push | Included in GHL |
 | `HEYGEN_API_KEY` | For video | Personalized video scripts | Pay per video |
+
+### Integration Hub (all optional — activate as needed)
+| Key | Tier | Used By | Cost |
+|-----|------|---------|------|
+| `CLEARBIT_API_KEY` | T1 Revenue | Company firmographics, person enrichment | Credits-based |
+| `FINDYMAIL_API_KEY` | T1 Revenue | Email finder (backup to Hunter) | Credits-based |
+| `ZEROBOUNCE_API_KEY` | T1 Revenue | Email validation & deliverability | Free: 100/mo |
+| `INSTANTLY_API_KEY` | T1 Revenue | Cold email campaigns & warmup | $30/mo |
+| `LEMLIST_API_KEY` | T1 Revenue | Multi-channel outreach sequences | $59/mo |
+| `CALENDLY_API_KEY` | T1 Revenue | Meeting scheduling links | Free tier |
+| `HUBSPOT_API_KEY` | T1 Revenue | HubSpot CRM (secondary) | Free tier |
+| `APIFY_API_KEY` | T2 Intel | Web scraping (LinkedIn, Maps, IG) | $49/mo |
+| `FIRECRAWL_API_KEY` | T2 Intel | AI website crawling & research | $16/mo |
+| `SIMILARWEB_API_KEY` | T2 Intel | Website traffic analytics | Free tier |
+| `AHREFS_API_KEY` | T2 Intel | SEO intelligence & backlinks | $99/mo |
+| `PINECONE_API_KEY` | T2 Intel | Vector DB for semantic search | Free: 1 index |
+| `SLACK_WEBHOOK_URL` | T3 Comms | Team notifications & alerts | Free |
+| `TELEGRAM_BOT_TOKEN` | T3 Comms | Mobile alerts (+ `TELEGRAM_CHAT_ID`) | Free |
+| `DISCORD_WEBHOOK_URL` | T3 Comms | Discord team notifications | Free |
+| `TWILIO_ACCOUNT_SID` | T3 Comms | SMS/Voice (+ `TWILIO_AUTH_TOKEN`) | $0.0079/SMS |
+| `SENDGRID_API_KEY` | T3 Comms | Email delivery for outreach | Free: 100/day |
+| `STRIPE_API_KEY` | T4 Analytics | Revenue tracking & attribution | 2.9%+$0.30 |
+| `KLAVIYO_API_KEY` | T4 Analytics | Marketing automation & segments | Free tier |
+| `POSTHOG_API_KEY` | T4 Analytics | Product analytics | Free tier |
+| `HUGGINGFACE_API_KEY` | T5 AI | Sentiment analysis, intent classification | Free tier |
+| `DEEPGRAM_API_KEY` | T5 AI | Sales call transcription | Pay per minute |
+| `REPLICATE_API_KEY` | T5 AI | ML model inference | Pay per run |
+| `LEONARDO_API_KEY` | T5 AI | AI image generation for outreach | Pay per image |
+| `LUSHA_API_KEY` | T6 Data | B2B contact enrichment | Credits-based |
+| `CONTACTOUT_API_KEY` | T6 Data | LinkedIn email/phone finder | Credits-based |
+| `TOMBA_API_KEY` | T6 Data | Email finder & verifier | Free tier |
+| `LINKUP_API_KEY` | T6 Data | LinkedIn data access | Credits-based |
+| `GOOGLE_MAPS_API_KEY` | T6 Data | Places API for business discovery | Pay per call |
 
 **Zero-cost tools (no API needed):** War Room, free intel, competitor vuln, terpene research, CSV importer, brief-to-docx
 

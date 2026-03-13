@@ -1,9 +1,9 @@
-const { useState, useEffect, useCallback, useMemo, useRef } = React;
+// ═══════════════════════════════════════════════════════════
+// NEXUS BDR — Unified Intelligence Dashboard v7.0
+// Pitch-ready single interface — Karpathy Enhanced
+// ═══════════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════════════
-// NEXUS BDR — Unified Intelligence Dashboard
-// Pitch-ready single interface combining all agent intelligence
-// ═══════════════════════════════════════════════════════════
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 
 // ─── THEME ───
 const C = {
@@ -17,6 +17,13 @@ const C = {
 };
 
 const FONT = { display: "'JetBrains Mono', monospace", body: "'Outfit', sans-serif" };
+
+// ─── BRAND CONFIG ───
+const BRANDS = {
+  ALL: { label:"NEXUS", sublabel:"All Brands", color:C.gold, accent:C.gold },
+  TBF: { label:"TBF", sublabel:"Terpene Belt Farms", color:"#2D5016", accent:"#4a8a2a", desc:"Premium · Science-backed · Enterprise", site:"terpenebeltfarms.com" },
+  DFT: { label:"DFT", sublabel:"Duty Free Terpenes", color:"#cc2222", accent:C.dft, desc:"Rebellious · No minimums · Creator-to-creator", site:"dutyfreetrps.com" },
+};
 
 // ─── DEMO DATA (fallback when API unavailable) ───
 const DEMO_COMPANIES = [
@@ -46,6 +53,10 @@ const DEMO_AGENTS = [
   { name:"Customer Intel", status:"standby", desc:"Churn, upsell, reactivation engine", file:"customer_intel.py", lines:629 },
   { name:"Terpene Research v2", status:"active", desc:"PubMed, patents, FDA — cumulative knowledge base", file:"terpene_research_v2.py", lines:869 },
   { name:"Master Orchestrator", status:"active", desc:"CLI entry point for entire system", file:"nexus.py", lines:543 },
+  { name:"Integration Hub", status:"active", desc:"30+ services across 6 tiers — enrichment, outreach, intel", file:"integration_hub.py", lines:1202 },
+  { name:"LLM Council", status:"active", desc:"Karpathy-inspired multi-model consensus for high-stakes decisions", file:"llm_council.py", lines:234, karpathy:true },
+  { name:"AutoResearch", status:"active", desc:"Autonomous research loop — fixed budget, single metric, agent picks actions", file:"auto_research.py", lines:397, karpathy:true },
+  { name:"Agent Base", status:"active", desc:"minbpe-style agent hierarchy + micrograd composable scoring", file:"agent_base.py", lines:445, karpathy:true },
 ];
 
 const DEMO_PIPELINE = { total:138, hot:61, warm:32, cool:28, cold:17, companies:22, verified:37 };
@@ -84,16 +95,17 @@ const PRICING = {
 };
 
 const BOOT_LINES = [
-  { text: "NEXUS BDR SYSTEM v5.0 — INITIALIZING", color: C.gold },
-  { text: "Loading agent fleet... 15 agents / 12,000+ lines", color: C.text },
+  { text: "NEXUS BDR SYSTEM v7.0 — KARPATHY ENHANCED — INITIALIZING", color: C.gold },
+  { text: "Loading agent fleet... 18 agents / 13,000+ lines", color: C.text },
   { text: "Pipeline data: 138 contacts / 22 companies / 61 hot", color: C.green },
   { text: "Model Router: Anthropic ✓  OpenRouter ✓", color: C.text },
   { text: "War Room: 53 entities / 35 signal types / learning active", color: C.green },
   { text: "Free Intel: Reddit ✓  FDA ✓  PubMed ✓  Google Trends ✓", color: C.green },
   { text: "CRM Sync: GoHighLevel ✓  53 custom fields deployed", color: C.green },
-  { text: "Research KB: terpene knowledge base loaded", color: C.text },
+  { text: "Integration Hub: 39 services / 6 tiers loaded", color: C.green },
+  { text: "Karpathy: LLM Council ✓  AutoResearch ✓  Agent Base ✓", color: C.cool },
+  { text: "Karpathy: nanoGPT depth config + micrograd signal scoring", color: C.cool },
   { text: "Kill Shot Bundles: 3 demo packages ready", color: C.warm },
-  { text: "Signal taxonomy: 15 types / decay + reliability scoring", color: C.text },
   { text: "SYSTEM ONLINE — All agents operational", color: C.green },
 ];
 
@@ -404,7 +416,7 @@ function AgentsTab({ agents }) {
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
         <div>
           <div style={{ color:C.gold, fontWeight:700, fontSize:16, fontFamily:FONT.display }}>AGENT FLEET</div>
-          <div style={{ color:C.dim, fontSize:12 }}>{agents.length} specialized agents · {totalLines.toLocaleString()} lines of code</div>
+          <div style={{ color:C.dim, fontSize:12 }}>{agents.length} specialized agents · {totalLines.toLocaleString()} lines · {agents.filter(a => a.karpathy).length} Karpathy</div>
         </div>
         <div style={{ display:"flex", gap:12 }}>
           {Object.entries(statusColors).map(([s, color]) => (
@@ -418,9 +430,12 @@ function AgentsTab({ agents }) {
 
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(320px, 1fr))", gap:12 }}>
         {agents.map(a => (
-          <div key={a.name} style={{ background:C.surface, borderRadius:10, border:`1px solid ${C.border}`, padding:16, transition:"all 0.3s" }}>
+          <div key={a.name} style={{ background:C.surface, borderRadius:10, border:`1px solid ${a.karpathy ? C.cool : C.border}`, padding:16, transition:"all 0.3s" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-              <span style={{ color:C.text, fontWeight:700, fontSize:14 }}>{a.name}</span>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <span style={{ color:C.text, fontWeight:700, fontSize:14 }}>{a.name}</span>
+                {a.karpathy && <Badge color={C.cool}>KARPATHY</Badge>}
+              </div>
               <Badge color={statusColors[a.status] || C.dim}>{a.status.toUpperCase()}</Badge>
             </div>
             <div style={{ color:C.dim, fontSize:12, marginBottom:10, lineHeight:1.4 }}>{a.desc}</div>
@@ -535,27 +550,365 @@ function ResearchTab({ snapshot }) {
   );
 }
 
+// ─── TAB: INTEGRATIONS ───
+function IntegrationsTab({ snapshot }) {
+  const hub = snapshot?.integrationHub || { total:39, active:0, services:[], tiers:{} };
+  const outputs = snapshot?.integrationOutputs || { enrichments:0, competitive_scans:0, gmaps_discoveries:0, morning_briefings:0, recent_activity:[] };
+
+  const tierLabels = {
+    tier_1_revenue: { label:"REVENUE IMPACT", color:C.gold, icon:"$" },
+    tier_2_intelligence: { label:"INTELLIGENCE", color:C.cool, icon:"?" },
+    tier_3_communication: { label:"COMMUNICATION", color:C.green, icon:">" },
+    tier_4_analytics: { label:"ANALYTICS", color:C.warm, icon:"#" },
+    tier_5_ai_enhancement: { label:"AI ENHANCEMENT", color:"#a855f7", icon:"*" },
+    tier_6_data_enrichment: { label:"DATA ENRICHMENT", color:"#06b6d4", icon:"+" },
+  };
+
+  return (
+    <div style={{ padding:24, overflow:"auto", height:"100%" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+        <div>
+          <div style={{ color:C.gold, fontWeight:700, fontSize:16, fontFamily:FONT.display }}>INTEGRATION HUB</div>
+          <div style={{ color:C.dim, fontSize:12 }}>{hub.active}/{hub.total} services active · 6 tiers</div>
+        </div>
+        <div style={{ display:"flex", gap:8 }}>
+          <Badge color={C.green}>{hub.active} ACTIVE</Badge>
+          <Badge color={C.dim}>{hub.total - hub.active} INACTIVE</Badge>
+        </div>
+      </div>
+
+      {/* Stats Row */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:12, marginBottom:20 }}>
+        {[
+          { label:"Enrichments", value:outputs.enrichments, color:C.gold },
+          { label:"Competitive Scans", value:outputs.competitive_scans, color:C.cool },
+          { label:"Maps Discoveries", value:outputs.gmaps_discoveries, color:C.green },
+          { label:"Morning Briefings", value:outputs.morning_briefings, color:C.warm },
+        ].map(s => (
+          <div key={s.label} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, padding:16, textAlign:"center" }}>
+            <div style={{ fontSize:28, fontWeight:800, color:s.color, fontFamily:FONT.display }}>{s.value}</div>
+            <div style={{ fontSize:11, color:C.dim, marginTop:4 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tier Grid */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))", gap:12 }}>
+        {Object.entries(tierLabels).map(([tierKey, tierInfo]) => {
+          const tierData = hub.tiers[tierKey] || { active:0, total:0 };
+          const services = hub.services.filter(s => s.tier === tierKey);
+          return (
+            <div key={tierKey} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, padding:16 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <span style={{ width:24, height:24, borderRadius:6, background:`${tierInfo.color}20`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:800, color:tierInfo.color, fontFamily:FONT.display }}>{tierInfo.icon}</span>
+                  <span style={{ color:C.text, fontWeight:700, fontSize:13, fontFamily:FONT.display }}>{tierInfo.label}</span>
+                </div>
+                <span style={{ color:C.dim, fontSize:11 }}>{tierData.active}/{tierData.total}</span>
+              </div>
+              {services.map(svc => (
+                <div key={svc.name} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"5px 0", borderBottom:`1px solid ${C.border}20` }}>
+                  <div>
+                    <span style={{ fontSize:12, color: svc.active ? C.text : C.muted }}>{svc.name}</span>
+                    {svc.cost && <span style={{ fontSize:10, color:C.muted, marginLeft:8 }}>{svc.cost}</span>}
+                  </div>
+                  <span style={{ width:8, height:8, borderRadius:"50%", background: svc.active ? C.green : C.muted+"40", display:"inline-block" }} />
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Recent Activity */}
+      {outputs.recent_activity.length > 0 && (
+        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:12, padding:20, marginTop:20 }}>
+          <div style={{ color:C.gold, fontWeight:700, fontSize:13, fontFamily:FONT.display, marginBottom:12 }}>RECENT INTEGRATION ACTIVITY</div>
+          {outputs.recent_activity.slice(-10).reverse().map((a, i) => (
+            <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:`1px solid ${C.border}20` }}>
+              <div>
+                <span style={{ fontSize:12, color:C.text }}>{a.action}</span>
+                {a.company && <span style={{ fontSize:11, color:C.dim, marginLeft:8 }}>{a.company}</span>}
+              </div>
+              <span style={{ fontSize:10, color:C.muted, fontFamily:FONT.display }}>{a.timestamp?.slice(0, 16)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* CLI Reference */}
+      <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:12, padding:20, marginTop:20 }}>
+        <div style={{ color:C.gold, fontWeight:700, fontSize:13, fontFamily:FONT.display, marginBottom:12 }}>QUICK COMMANDS</div>
+        <pre style={{ color:C.dim, fontSize:11, fontFamily:FONT.display, lineHeight:1.8 }}>{`python3 scripts/nexus.py hub status              # Show active integrations
+python3 scripts/nexus.py hub enrich --domain X    # Deep-enrich company
+python3 scripts/nexus.py hub verify --domain X    # Email verification chain
+python3 scripts/nexus.py hub research --domain X  # Firecrawl website research
+python3 scripts/nexus.py hub competitive --domain X,Y  # Competitive scan
+python3 scripts/nexus.py hub gmaps --domain "query"    # Google Maps discovery
+python3 scripts/nexus.py hub morning              # Morning intel blast
+python3 scripts/integration_hub.py status         # Direct hub access`}</pre>
+      </div>
+    </div>
+  );
+}
+
+// ─── KARPATHY DATA ───
+
+const KARPATHY_INSIGHTS = [
+  {
+    id: "llm-council",
+    title: "LLM Council",
+    source: "Karpathy multi-head pattern",
+    description: "Three models independently evaluate, then a council vote synthesizes the final recommendation. Eliminates single-model blind spots on high-stakes BDR decisions.",
+    stages: ["Independent Eval", "Cross-Review", "Council Vote", "Attribution"],
+    members: [
+      { id: "claude", tier: "primary", focus: "nuance + safety" },
+      { id: "gpt-4o", tier: "secondary", focus: "breadth + speed" },
+      { id: "gemini", tier: "tertiary", focus: "data + grounding" },
+    ],
+  },
+  {
+    id: "autoresearch",
+    title: "AutoResearch Loop",
+    source: "Karpathy autonomous agent pattern",
+    description: "Fixed time + cost budget. Single optimization metric. Agent autonomously picks actions, runs them, scores results, and loops until budget exhausted.",
+    actions: ["web_search", "scrape_site", "enrich_contact", "check_reddit", "score_signal", "write_brief"],
+  },
+  {
+    id: "nanogpt-depth",
+    title: "nanoGPT Depth Config",
+    source: "nanoGPT layer-depth pattern",
+    description: "Like nanoGPT's configurable transformer depth, research tasks get shallow (quick scan) or deep (full brief) treatment based on account priority and budget.",
+    depths: [
+      { level: 1, label: "Quick Scan", tier: "cold leads", cost: "$0.02" },
+      { level: 2, label: "Standard Brief", tier: "warm leads", cost: "$0.15" },
+      { level: 3, label: "Deep Research", tier: "hot leads", cost: "$0.80" },
+      { level: 4, label: "Full War Room", tier: "key accounts", cost: "$2.50" },
+    ],
+  },
+  {
+    id: "micrograd-signal",
+    title: "micrograd SignalScore",
+    source: "micrograd composable ops",
+    description: "Composable signal scoring inspired by micrograd's autograd. Each signal is a differentiable node — multiply, add, decay — with full attribution tracing.",
+    ops: ["add", "multiply", "decay", "threshold", "normalize", "attribute"],
+  },
+  {
+    id: "minbpe-hierarchy",
+    title: "minbpe Agent Hierarchy",
+    source: "minbpe tokenizer pattern",
+    description: "Like minbpe builds complex tokens from simple byte pairs, agents compose hierarchically. Atomic agents → composite agents → orchestrator.",
+    hierarchy: [
+      "ORCHESTRATOR (nexus.py)",
+      "├── STRATEGY: War Room + LLM Council",
+      "├── INTEL: Sales Brief + Free Intel + Social + Competitor",
+      "├── PIPELINE: Apollo + Enrichment + GHL Sync",
+      "├── OUTPUT: Kill Shot + HeyGen + Brief→DOCX",
+      "└── AUTO: AutoResearch + Trigger Monitor",
+    ],
+  },
+];
+
+const COUNCIL_DECISIONS = ["positioning", "deal_strategy", "outreach_angle", "competitive_play", "qualification", "risk_assessment"];
+
+// ─── TAB: KARPATHY ───
+
+function KarpathyTab() {
+  const karpathyAgentCount = DEMO_AGENTS.filter(a => a.karpathy).length;
+
+  return (
+    <div style={{ padding:24, overflow:"auto", height:"100%" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+        <div>
+          <div style={{ color:C.gold, fontWeight:700, fontSize:18, fontFamily:FONT.display }}>KARPATHY ARCHITECTURE PATTERNS</div>
+          <div style={{ color:C.dim, fontSize:12, marginTop:4 }}>5 patterns from Andrej Karpathy's repos applied to BDR intelligence</div>
+        </div>
+        <div style={{ display:"flex", gap:8 }}>
+          <div style={{ background:`${C.green}15`, border:`1px solid ${C.green}30`, borderRadius:6, padding:"6px 12px", textAlign:"center" }}>
+            <div style={{ fontSize:16, fontWeight:800, color:C.green, fontFamily:FONT.display }}>5</div>
+            <div style={{ fontSize:9, color:C.dim }}>PATTERNS</div>
+          </div>
+          <div style={{ background:`${C.cool}15`, border:`1px solid ${C.cool}30`, borderRadius:6, padding:"6px 12px", textAlign:"center" }}>
+            <div style={{ fontSize:16, fontWeight:800, color:C.cool, fontFamily:FONT.display }}>{karpathyAgentCount}</div>
+            <div style={{ fontSize:9, color:C.dim }}>NEW TOOLS</div>
+          </div>
+          <div style={{ background:`${C.gold}15`, border:`1px solid ${C.gold}30`, borderRadius:6, padding:"6px 12px", textAlign:"center" }}>
+            <div style={{ fontSize:16, fontWeight:800, color:C.gold, fontFamily:FONT.display }}>1,076</div>
+            <div style={{ fontSize:9, color:C.dim }}>LINES</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+        {/* LLM Council */}
+        {(() => { const insight = KARPATHY_INSIGHTS[0]; return (
+          <div style={{ background:C.surface, borderRadius:10, border:`1px solid ${C.cool}40`, padding:16 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+              <div>
+                <div style={{ color:C.cool, fontWeight:700, fontSize:14, fontFamily:FONT.display }}>LLM COUNCIL</div>
+                <div style={{ color:C.dim, fontSize:11 }}>from {insight.source}</div>
+              </div>
+              <Badge color={C.green}>ACTIVE</Badge>
+            </div>
+            <div style={{ fontSize:12, color:C.text, lineHeight:1.5, marginBottom:12 }}>{insight.description}</div>
+            <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+              {insight.stages.map((s, i) => (
+                <div key={s} style={{ flex:1, textAlign:"center", padding:"8px 4px", background:`${C.cool}10`, border:`1px solid ${C.cool}25`, borderRadius:6 }}>
+                  <div style={{ fontSize:16, fontWeight:800, color:C.cool, fontFamily:FONT.display }}>{i+1}</div>
+                  <div style={{ fontSize:10, color:C.text, marginTop:2 }}>{s}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize:11, color:C.gold, fontWeight:600, marginBottom:6 }}>COUNCIL MEMBERS</div>
+            {insight.members.map(m => (
+              <div key={m.id} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom:`1px solid ${C.border}`, fontSize:12 }}>
+                <span style={{ color:C.text, fontWeight:600, textTransform:"capitalize" }}>{m.id}</span>
+                <span style={{ color:C.dim }}>{m.tier} — {m.focus}</span>
+              </div>
+            ))}
+            <div style={{ marginTop:10, fontSize:11, color:C.dim }}>
+              <span style={{ color:C.gold, fontWeight:600 }}>Decisions: </span>{COUNCIL_DECISIONS.join(" · ")}
+            </div>
+          </div>
+        ); })()}
+
+        {/* AutoResearch */}
+        {(() => { const insight = KARPATHY_INSIGHTS[1]; return (
+          <div style={{ background:C.surface, borderRadius:10, border:`1px solid ${C.green}40`, padding:16 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+              <div>
+                <div style={{ color:C.green, fontWeight:700, fontSize:14, fontFamily:FONT.display }}>AUTORESEARCH LOOP</div>
+                <div style={{ color:C.dim, fontSize:11 }}>from {insight.source}</div>
+              </div>
+              <Badge color={C.green}>ACTIVE</Badge>
+            </div>
+            <div style={{ fontSize:12, color:C.text, lineHeight:1.5, marginBottom:12 }}>{insight.description}</div>
+            <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+              <div style={{ flex:1, textAlign:"center", padding:10, background:`${C.green}10`, borderRadius:6, border:`1px solid ${C.green}25` }}>
+                <div style={{ fontSize:20, fontWeight:800, color:C.green, fontFamily:FONT.display }}>60m</div>
+                <div style={{ fontSize:10, color:C.dim }}>DEFAULT BUDGET</div>
+              </div>
+              <div style={{ flex:1, textAlign:"center", padding:10, background:`${C.gold}10`, borderRadius:6, border:`1px solid ${C.gold}25` }}>
+                <div style={{ fontSize:20, fontWeight:800, color:C.gold, fontFamily:FONT.display }}>$5.00</div>
+                <div style={{ fontSize:10, color:C.dim }}>MAX COST</div>
+              </div>
+              <div style={{ flex:1, textAlign:"center", padding:10, background:`${C.cool}10`, borderRadius:6, border:`1px solid ${C.cool}25` }}>
+                <div style={{ fontSize:20, fontWeight:800, color:C.cool, fontFamily:FONT.display }}>6</div>
+                <div style={{ fontSize:10, color:C.dim }}>ACTIONS</div>
+              </div>
+            </div>
+            <div style={{ fontSize:11, color:C.gold, fontWeight:600, marginBottom:6 }}>AUTONOMOUS ACTIONS</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:4 }}>
+              {insight.actions.map(a => (
+                <div key={a} style={{ fontSize:11, color:C.text, padding:"4px 8px", background:`${C.border}50`, borderRadius:4, fontFamily:FONT.display }}>{a}</div>
+              ))}
+            </div>
+            <div style={{ marginTop:10, padding:8, background:`${C.green}08`, borderRadius:4, border:`1px solid ${C.green}20`, fontSize:11, color:C.dim }}>
+              <span style={{ color:C.green, fontWeight:600 }}>Metric: </span>pipeline_value_delta — signals×1 + enriched×5 + briefs×10 + pipeline×0.001
+            </div>
+          </div>
+        ); })()}
+
+        {/* nanoGPT Depth Config */}
+        {(() => { const insight = KARPATHY_INSIGHTS[2]; return (
+          <div style={{ background:C.surface, borderRadius:10, border:`1px solid ${C.warm}40`, padding:16 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+              <div>
+                <div style={{ color:C.warm, fontWeight:700, fontSize:14, fontFamily:FONT.display }}>NANOGPT DEPTH CONFIG</div>
+                <div style={{ color:C.dim, fontSize:11 }}>from {insight.source}</div>
+              </div>
+            </div>
+            <div style={{ fontSize:12, color:C.text, lineHeight:1.5, marginBottom:12 }}>{insight.description}</div>
+            {insight.depths.map(d => {
+              const barColor = d.level === 1 ? C.dim : d.level === 2 ? C.cool : d.level === 3 ? C.warm : C.gold;
+              return (
+                <div key={d.level} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:`1px solid ${C.border}` }}>
+                  <div style={{ width:28, height:28, borderRadius:6, background:`${barColor}20`, border:`1px solid ${barColor}40`, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, fontSize:14, color:barColor, fontFamily:FONT.display }}>{d.level}</div>
+                  <div style={{ flex:1 }}>
+                    <span style={{ color:C.text, fontWeight:600, fontSize:12 }}>{d.label}</span>
+                    <span style={{ color:C.dim, fontSize:11, marginLeft:8 }}>{d.tier}</span>
+                  </div>
+                  <span style={{ color:barColor, fontSize:12, fontFamily:FONT.display }}>{d.cost}</span>
+                </div>
+              );
+            })}
+          </div>
+        ); })()}
+
+        {/* micrograd SignalScore */}
+        {(() => { const insight = KARPATHY_INSIGHTS[3]; return (
+          <div style={{ background:C.surface, borderRadius:10, border:`1px solid ${C.hot}40`, padding:16 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+              <div>
+                <div style={{ color:C.hot, fontWeight:700, fontSize:14, fontFamily:FONT.display }}>MICROGRAD SIGNALSCORE</div>
+                <div style={{ color:C.dim, fontSize:11 }}>from {insight.source}</div>
+              </div>
+            </div>
+            <div style={{ fontSize:12, color:C.text, lineHeight:1.5, marginBottom:12 }}>{insight.description}</div>
+            <div style={{ background:C.void, borderRadius:6, padding:12, fontFamily:FONT.display, fontSize:11, lineHeight:1.8, color:C.text }}>
+              <div><span style={{color:C.cool}}>score</span> = SignalScore(<span style={{color:C.green}}>0.7</span>, <span style={{color:C.warm}}>"base"</span>)</div>
+              <div><span style={{color:C.cool}}>score</span> = score <span style={{color:C.hot}}>*</span> SignalScore(<span style={{color:C.green}}>0.9</span>, <span style={{color:C.warm}}>"reliability"</span>)</div>
+              <div><span style={{color:C.cool}}>score</span> = score <span style={{color:C.hot}}>+</span> SignalScore(<span style={{color:C.green}}>0.3</span>, <span style={{color:C.warm}}>"hiring_signal"</span>)</div>
+              <div><span style={{color:C.cool}}>score</span> = score.<span style={{color:C.gold}}>decay</span>(days=<span style={{color:C.green}}>7</span>, half_life=<span style={{color:C.green}}>14</span>)</div>
+              <div style={{color:C.dim,marginTop:4}}>→ score.value = <span style={{color:C.green}}>0.7395</span></div>
+              <div style={{color:C.dim}}>→ score.attribution = <span style={{color:C.gold}}>{"{"}"base": 0.63, "hiring": 0.3{"}"}</span></div>
+            </div>
+            <div style={{ marginTop:8, display:"flex", gap:4, flexWrap:"wrap" }}>
+              {insight.ops.map(op => (
+                <span key={op} style={{ fontSize:10, color:C.hot, padding:"2px 8px", background:`${C.hot}10`, borderRadius:4, fontFamily:FONT.display, border:`1px solid ${C.hot}25` }}>{op}</span>
+              ))}
+            </div>
+          </div>
+        ); })()}
+
+        {/* minbpe Agent Hierarchy — full width */}
+        {(() => { const insight = KARPATHY_INSIGHTS[4]; return (
+          <div style={{ gridColumn:"1 / -1", background:C.surface, borderRadius:10, border:`1px solid ${C.gold}40`, padding:16 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+              <div>
+                <div style={{ color:C.gold, fontWeight:700, fontSize:14, fontFamily:FONT.display }}>MINBPE AGENT HIERARCHY</div>
+                <div style={{ color:C.dim, fontSize:11 }}>from {insight.source}</div>
+              </div>
+            </div>
+            <div style={{ fontSize:12, color:C.text, lineHeight:1.5, marginBottom:12 }}>{insight.description}</div>
+            <div style={{ background:C.void, borderRadius:6, padding:12, fontFamily:FONT.display, fontSize:12, lineHeight:1.8 }}>
+              {insight.hierarchy.map((line, i) => (
+                <div key={i} style={{ color: i === 0 ? C.gold : C.text }}>{line}</div>
+              ))}
+            </div>
+          </div>
+        ); })()}
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN APP ───
 
 function NexusDashboard() {
   const [booted, setBooted] = useState(false);
   const [bootLines, setBootLines] = useState([]);
   const [activeTab, setActiveTab] = useState("DASHBOARD");
+  const [activeBrand, setActiveBrand] = useState("ALL");
   const [snapshot, setSnapshot] = useState(null);
 
   // Boot sequence
   useEffect(() => {
     let i = 0;
+    let cleared = false;
     const timer = setInterval(() => {
+      if (cleared) return;
       if (i < BOOT_LINES.length) {
-        setBootLines(prev => [...prev, BOOT_LINES[i]]);
+        const line = BOOT_LINES[i];
         i++;
+        if (line) setBootLines(prev => [...prev, line]);
       } else {
+        cleared = true;
         clearInterval(timer);
         setTimeout(() => setBooted(true), 500);
       }
     }, 180);
-    return () => clearInterval(timer);
+    return () => { cleared = true; clearInterval(timer); };
   }, []);
 
   // Fetch live data
@@ -570,7 +923,7 @@ function NexusDashboard() {
   }, [booted]);
 
   // Derive data from snapshot or fall back to demo
-  const companies = useMemo(() => {
+  const allCompanies = useMemo(() => {
     if (snapshot?.priorities?.length > 0) {
       return snapshot.priorities.map(p => ({
         name: p.company, domain: p.domain, score: p.score, tier: p.tier,
@@ -583,6 +936,11 @@ function NexusDashboard() {
     }
     return DEMO_COMPANIES;
   }, [snapshot]);
+
+  const companies = useMemo(() => {
+    if (activeBrand === "ALL") return allCompanies;
+    return allCompanies.filter(c => c.brand === activeBrand);
+  }, [allCompanies, activeBrand]);
 
   const competitors = useMemo(() => {
     if (snapshot?.competitors?.length > 0) return snapshot.competitors;
@@ -604,7 +962,7 @@ function NexusDashboard() {
         <div style={{ fontSize:36, fontWeight:800, background:`linear-gradient(135deg, ${C.gold}, #e8c55a)`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", marginBottom:8, letterSpacing:6 }}>NEXUS</div>
         <div style={{ fontSize:13, color:C.dim, marginBottom:32, letterSpacing:2 }}>BDR INTELLIGENCE SYSTEM</div>
         <div style={{ maxWidth:640, width:"100%" }}>
-          {bootLines.map((line, i) => (
+          {bootLines.filter(Boolean).map((line, i) => (
             <div key={i} style={{ color:line.color, fontSize:13, padding:"3px 0", opacity:0, animation:"fadeIn 0.3s forwards", animationDelay:`${i*0.05}s` }}>
               <span style={{ color:C.muted, marginRight:8 }}>[{String(i).padStart(2,"0")}]</span>{line.text}
             </div>
@@ -615,7 +973,7 @@ function NexusDashboard() {
     );
   }
 
-  const TABS = ["DASHBOARD", "PIPELINE", "BUNDLES", "RESEARCH", "AGENTS"];
+  const TABS = ["DASHBOARD", "PIPELINE", "BUNDLES", "RESEARCH", "AGENTS", "INTEGRATIONS", "KARPATHY"];
 
   // ── Main Interface ──
   return (
@@ -637,8 +995,8 @@ function NexusDashboard() {
       {/* Header */}
       <div style={{ padding:"10px 24px", display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:`1px solid ${C.border}`, background:C.void }}>
         <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-          <span style={{ fontSize:22, fontWeight:800, background:`linear-gradient(135deg, ${C.gold}, #e8c55a)`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", letterSpacing:4, fontFamily:FONT.display }}>NEXUS</span>
-          <span style={{ color:C.dim, fontSize:12, letterSpacing:1 }}>BDR Intelligence System v5.0</span>
+          <span style={{ fontSize:22, fontWeight:800, background:`linear-gradient(135deg, ${BRANDS[activeBrand].accent}, ${activeBrand === "ALL" ? "#e8c55a" : BRANDS[activeBrand].color})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", letterSpacing:4, fontFamily:FONT.display }}>{activeBrand === "ALL" ? "NEXUS" : BRANDS[activeBrand].label}</span>
+          <span style={{ color:C.dim, fontSize:12, letterSpacing:1 }}>{activeBrand === "ALL" ? "BDR Intelligence System v7.0 — Karpathy Enhanced" : BRANDS[activeBrand].sublabel}</span>
           {snapshot && <Badge color={C.green}>LIVE</Badge>}
           {!snapshot && <Badge color={C.warm}>DEMO</Badge>}
         </div>
@@ -655,13 +1013,34 @@ function NexusDashboard() {
         </div>
       </div>
 
+      {/* Brand Selector */}
+      <div style={{ padding:"8px 24px", display:"flex", alignItems:"center", gap:6, borderBottom:`1px solid ${C.border}`, background:C.void }}>
+        <span style={{ color:C.dim, fontSize:10, fontFamily:FONT.display, marginRight:8, letterSpacing:1 }}>BRAND:</span>
+        {Object.entries(BRANDS).map(([key, b]) => (
+          <button key={key} onClick={() => setActiveBrand(key)} style={{
+            background: activeBrand === key ? (b.accent || b.color) : "transparent",
+            color: activeBrand === key ? "#fff" : C.dim,
+            border:`1px solid ${activeBrand === key ? (b.accent || b.color) : C.border}`,
+            padding:"5px 14px", borderRadius:5, fontSize:11, fontWeight:700,
+            cursor:"pointer", fontFamily:FONT.display, letterSpacing:1, transition:"all 0.2s"
+          }}>{b.label}</button>
+        ))}
+        {activeBrand !== "ALL" && (
+          <span style={{ marginLeft:12, fontSize:11, color:BRANDS[activeBrand].accent, fontFamily:FONT.body }}>
+            {BRANDS[activeBrand].sublabel} <span style={{ color:C.dim }}>— {BRANDS[activeBrand].desc}</span>
+          </span>
+        )}
+      </div>
+
       {/* Content */}
-      <div style={{ height:"calc(100vh - 70px)", overflow:"hidden" }}>
+      <div style={{ height:"calc(100vh - 110px)", overflow:"hidden" }}>
         {activeTab === "DASHBOARD" && <DashboardTab companies={companies} pipeline={pipeline} competitors={competitors} snapshot={snapshot} />}
         {activeTab === "PIPELINE" && <PipelineTab companies={companies} />}
         {activeTab === "BUNDLES" && <BundlesTab />}
         {activeTab === "RESEARCH" && <ResearchTab snapshot={snapshot} />}
         {activeTab === "AGENTS" && <AgentsTab agents={DEMO_AGENTS} />}
+        {activeTab === "INTEGRATIONS" && <IntegrationsTab snapshot={snapshot} />}
+        {activeTab === "KARPATHY" && <KarpathyTab />}
       </div>
 
       <style>{`
@@ -675,3 +1054,5 @@ function NexusDashboard() {
     </div>
   );
 }
+
+export default NexusDashboard;
