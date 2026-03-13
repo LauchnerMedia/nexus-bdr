@@ -1,5 +1,3 @@
-const { useState, useEffect, useCallback, useMemo, useRef } = React;
-
 // ═══════════════════════════════════════════════════════════
 // NEXUS BDR — Unified Intelligence Dashboard
 // Pitch-ready single interface combining all agent intelligence
